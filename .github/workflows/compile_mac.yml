@@ -24,7 +24,7 @@ jobs:
              export PATH=$PATH:/usr/local/opt/gettext/bin
              export HOMEBREW_NO_AUTO_UPDATE=1
              set -e
-             brew install gettext ninja pandoc wxwidgets
+             brew install gettext ninja pandoc wxwidgets maxima
              set +e
       - name: Configure wxMaxima
         run: |
@@ -44,6 +44,10 @@ jobs:
         run: |
              cd ../build-wxm
              cpack -G DragNDrop
+      - name: Test wxMaxima
+        run: |
+             cd ../build-wxm
+             ctest
 
   compile_Make:
     runs-on: macos-latest
