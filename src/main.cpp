@@ -222,8 +222,12 @@ bool MyApp::OnInit() {
       .Read(wxT("language"), &lang);
     if (lang == wxLANGUAGE_UNKNOWN)
       lang = wxLANGUAGE_DEFAULT;
-    m_locale.Init(lang);
 
+    {
+      wxLogNull suppressErrorMessages;
+	m_locale.Init(lang);
+    }
+    
     // Do we reckong we improve something if we set maxima's language, as well?
     if ((wxLocale::IsAvailable(lang)) && (lang != wxLANGUAGE_DEFAULT)) {
       // Set maxima's language, as well.
@@ -424,7 +428,7 @@ bool MyApp::OnInit() {
   // std::cerr confusing the mac.
   wxString logMessagesSoFar = noStdErr.GetBuffer();
   if (!logMessagesSoFar.IsEmpty())
-    wxLogMessage("Log messages during early startup: " + logMessagesSoFar);
+    wxLogMessage("Log messages during early startup: %s", logMessagesSoFar.mb_str());
   return true;
 }
 

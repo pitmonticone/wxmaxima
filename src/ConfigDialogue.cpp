@@ -655,7 +655,7 @@ void ConfigDialogue::SetCheckboxValues() {
   m_copyEMF->SetValue(m_configuration->CopyEMF());
 #endif
 
-  UpdateButton(TS_DEFAULT);
+  UpdateButton(TS_CODE_DEFAULT);
   UpdateButton(TS_MATH);
   m_useUnicodeMaths->SetValue(m_configuration->UseUnicodeMaths());
 }
@@ -1953,14 +1953,14 @@ wxWindow *ConfigDialogue::CreateClipboardPanel() {
 
 TextStyle ConfigDialogue::StyleForListIndex(int index) {
   if (index == 0)
-    return TS_DEFAULT;
+    return TS_CODE_DEFAULT;
   if (index == 1)
     return TS_MATH;
   return TextStyle(index - 1);
 }
 
 int ConfigDialogue::StyleListIndexForStyle(TextStyle style) {
-  if (style == TS_DEFAULT)
+  if (style == TS_CODE_DEFAULT)
     return 0;
   if (style == TS_MATH)
     return 1;
@@ -1974,13 +1974,13 @@ TextStyle ConfigDialogue::GetSelectedStyle() const {
 void ConfigDialogue::UpdateButton(TextStyle const st) {
   Style const style = m_configuration->m_styles[st];
   wxButton *fontButton = {};
-  if (st == TS_DEFAULT)
+  if (st == TS_CODE_DEFAULT)
     fontButton = m_getDefaultFont;
   else if (st == TS_MATH)
     fontButton = m_getMathFont;
   if (fontButton)
     fontButton->SetLabel(wxString::Format(wxT("%s (%g)"),
-                                          style.GetFontName().GetAsString(),
+                                          style.GetFontName(),
                                           style.GetFontSize().Get()));
 }
 
@@ -2276,10 +2276,9 @@ void ConfigDialogue::WriteSettings() {
     startupFile.MakeAbsolute();
     wxString startupDir = startupFile.GetPath();
     if (!wxDirExists(startupDir)) {
-      wxLogMessage(
-		   wxString::Format(_("The directory %s with maxima's startup file "
+      wxLogMessage(_("The directory %s with maxima's startup file "
 				      "doesn't exist. Trying to create it..."),
-				    startupDir.utf8_str()));
+				    startupDir.mb_str());
       wxMkdir(startupDir);
     }
 
@@ -2359,7 +2358,7 @@ void ConfigDialogue::OnFontButton(wxCommandEvent &event) {
   TextStyle const prevSt = GetSelectedStyle();
   TextStyle curSt = {};
   if (event.GetId() == button_defaultFont)
-    curSt = TS_DEFAULT;
+    curSt = TS_CODE_DEFAULT;
   else if (event.GetId() == button_mathFont)
     curSt = TS_MATH;
 
@@ -2371,7 +2370,6 @@ void ConfigDialogue::OnFontButton(wxCommandEvent &event) {
 void ConfigDialogue::OnChangeFontFamily(wxCommandEvent &WXUNUSED(event)) {
   TextStyle const st = GetSelectedStyle();
   Style style = m_configuration->m_styles[st];
-  style.ResolveToFont();
 
   if (!style.IsFontOk())
     style = Style::FromStockFont(wxStockGDI::FONT_NORMAL);
@@ -2471,29 +2469,29 @@ void ConfigDialogue::CopyConfig(wxConfigBase *src, wxConfigBase *dst,
   while (bCont) {
     switch (src->GetEntryType(str)) {
     case wxConfigBase::EntryType::Type_String:
-      wxLogMessage(wxString::Format(_("Copying config string \"%s\""),
-                                    src->GetPath() + wxT("/") + str));
+      wxLogMessage(_("Copying config string \"%s\""),
+		   wxString(src->GetPath() + wxT("/") + str).mb_str());
       dst->Write(str, src->ReadBool(str, wxEmptyString));
       break;
     case wxConfigBase::EntryType::Type_Boolean:
-      wxLogMessage(wxString::Format(_("Copying config bool \"%s\""),
-                                    src->GetPath() + wxT("/") + str));
+      wxLogMessage(_("Copying config bool \"%s\""),
+		   wxString(src->GetPath() + wxT("/") + str).mb_str());
       dst->Write(str, src->ReadBool(str, false));
       break;
     case wxConfigBase::EntryType::Type_Integer:
-      wxLogMessage(wxString::Format(_("Copying config int \"%s\""),
-                                    src->GetPath() + wxT("/") + str));
+      wxLogMessage(_("Copying config int \"%s\""),
+		   wxString(src->GetPath() + wxT("/") + str).mb_str());
       dst->Write(str, src->ReadLong(str, 0));
       break;
     case wxConfigBase::EntryType::Type_Float:
-      wxLogMessage(wxString::Format(_("Copying config float \"%s\""),
-                                    src->GetPath() + wxT("/") + str));
+      wxLogMessage(_("Copying config float \"%s\""),
+		   wxString(src->GetPath() + wxT("/") + str).mb_str());
       dst->Write(str, src->ReadDouble(str, 0.0));
       break;
     default:
       wxLogMessage(
-		   wxString::Format(_("Config item \"%s\" was of an unknown type"),
-				    src->GetPath() + wxT("/") + str));
+		   _("Config item \"%s\" was of an unknown type"),
+		   wxString(src->GetPath() + wxT("/") + str).mb_str());
     }
     bCont = src->GetNextEntry(str, dummy);
   }
