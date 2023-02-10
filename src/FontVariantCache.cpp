@@ -20,10 +20,27 @@
 //  SPDX-License-Identifier: GPL-2.0+
 
 #include <FontVariantCache.h>
-
+#include <wx/intl.h>
+#include <wx/log.h>
+#include <iostream>
 FontVariantCache::FontVariantCache(wxString fontName):
   m_fontName(fontName)
 {
+}
+
+
+void FontVariantCache::ClearCache(){
+  bool cleared = false;
+  for (auto i: m_fontCaches)
+  {
+    if(!i.empty())
+    {
+      cleared = true;
+      i.clear();
+    }
+  }
+  if(cleared)
+    wxLogMessage(_("Cleared font cache for font %s"), m_fontName.mb_str());
 }
 
 std::shared_ptr<wxFont> FontVariantCache::GetFont (double size,
@@ -56,13 +73,17 @@ std::shared_ptr<wxFont> FontVariantCache::GetFont (double size,
         weight, isUnderlined,
         m_fontName));
     if(!font->IsOk())
+    {
+      wxLogMessage(_("Cannot create a font based on %s. Falling back to a default font."), m_fontName.mb_str());
       font = std::shared_ptr<wxFont>(new wxFont(*wxNORMAL_FONT));
+    }
 #if wxCHECK_VERSION(3, 1, 2)
     font->SetFractionalPointSize(size);
 #else
     font->SetPointSize(size);
 #endif
     m_fontCaches[index][size] = font;
+    wxLogMessage(_("Caching font variant: %s"), font->GetNativeFontInfoDesc().mb_str());
     return font;
   }
   return cachedFont->second;

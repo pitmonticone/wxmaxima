@@ -36,9 +36,9 @@
 
 TextCell::TextCell(GroupCell *group, Configuration *config,
                    const wxString &text, TextStyle style)
-  : Cell(group, config) {
+  : Cell(group, config)
+{
   InitBitFields();
-  m_textStyle = style;
   switch (style) {
   case TS_MATH:
     m_type = MC_TYPE_TEXT;
@@ -110,10 +110,11 @@ TextCell::TextCell(GroupCell *group, Configuration *config,
     m_type = MC_TYPE_TITLE;
     break;
   default:
-    wxLogMessage(_("Unexpected text style %i for TextCell"), style);
+    wxLogMessage(_("Unexpected text style %li for TextCell"), (long)style);
     m_type = MC_TYPE_TITLE;
   }
   TextCell::SetValue(text);
+  SetStyle(style);
 }
 
 // cppcheck-suppress uninitMemberVar symbolName=TextCell::m_alt
@@ -135,9 +136,9 @@ DEFINE_CELL(TextCell)
 void TextCell::SetStyle(TextStyle style) {
   m_sizeCache.clear();
   Cell::SetStyle(style);
-  if ((m_text == wxT("gamma")) && (m_textStyle == TS_FUNCTION))
+  if ((m_text == wxT("gamma")) && (GetTextStyle() == TS_FUNCTION))
     m_displayedText = wxT("\u0393");
-  if ((m_text == wxT("psi")) && (m_textStyle == TS_FUNCTION))
+  if ((m_text == wxT("psi")) && (GetTextStyle() == TS_FUNCTION))
     m_displayedText = wxT("\u03A8");
   if ((style == TS_LABEL) || (style == TS_USERLABEL) ||
       (style == TS_MAIN_PROMPT) || (style == TS_OTHER_PROMPT))
@@ -146,11 +147,7 @@ void TextCell::SetStyle(TextStyle style) {
 }
 
 void TextCell::SetType(CellType type) {
-  if (type == MC_TYPE_DEFAULT)
-    return;
   m_sizeCache.clear();
-  ResetSize();
-  ResetData();
   Cell::SetType(type);
 }
 
@@ -167,7 +164,7 @@ void TextCell::UpdateToolTip() {
 
   auto const &c_text = m_text;
 
-  if (m_textStyle == TS_VARIABLE) {
+  if (GetTextStyle() == TS_VARIABLE) {
     if (m_text == wxT("pnz"))
       SetToolTip(&T_(
 		     "Either positive, negative or zero.\n"
@@ -215,7 +212,7 @@ void TextCell::UpdateToolTip() {
     }
   }
 
-  else if (m_textStyle == TS_NUMBER) {
+  else if (GetTextStyle() == TS_NUMBER) {
     if ((m_roundingErrorRegEx1.Matches(m_text)) ||
         (m_roundingErrorRegEx2.Matches(m_text)) ||
         (m_roundingErrorRegEx3.Matches(m_text)) ||
@@ -425,7 +422,7 @@ void TextCell::UpdateDisplayedText() {
   m_displayedText.Replace(wxT("->"), wxT("\u2192"));
   m_displayedText.Replace(wxT("\u2212>"), wxT("\u2192"));
 
-  if (m_textStyle == TS_FUNCTION) {
+  if (GetTextStyle() == TS_FUNCTION) {
     if (m_text == wxT("ilt"))
       SetToolTip(&T_("The inverse laplace transform."));
 
@@ -455,7 +452,7 @@ void TextCell::UpdateDisplayedText() {
 }
 
 void TextCell::Recalculate(AFontSize fontsize) {
-  if (m_textStyle == TS_ASCIIMATHS)
+  if (GetTextStyle() == TS_ASCIIMATHS)
     ForceBreakLine(true);
   if (m_keepPercent_last != m_configuration->CheckKeepPercent())
     UpdateDisplayedText();
@@ -486,6 +483,7 @@ void TextCell::Recalculate(AFontSize fontsize) {
 
 void TextCell::Draw(wxPoint point) {
   Cell::Draw(point);
+
   if (DrawThisCell(point) &&
       !(IsHidden() ||
         (GetHidableMultSign() && m_configuration->HidemultiplicationSign()))) {
@@ -503,27 +501,22 @@ void TextCell::Draw(wxPoint point) {
 }
 
 std::shared_ptr<wxFont> TextCell::GetFont(AFontSize fontsize) {
-  auto style = m_configuration->GetStyle(m_textStyle);
+  auto const style = m_configuration->GetStyle(GetTextStyle());
 
-  auto fontCache = style.GetFontCache();
-  bool isItalic = style.IsItalic(); 
-  // Mark special variables that are printed as ordinary letters as being
-  // special.
-  if(m_textStyle == TS_VARIABLE)
-    {
-      if ((!m_configuration->CheckKeepPercent()) &&
-	  ((m_text == wxT("%e")) || (m_text == wxT("%i"))))
-	isItalic = !isItalic;
-    }
-
-  
+  auto fontCache = style->GetFontCache();
   wxASSERT(m_fontSize_Scaled.IsValid());
-  return fontCache->GetFont(fontsize.Get(), isItalic, style.IsBold(), style.IsUnderlined());
+  return fontCache->GetFont(fontsize.Get(), style->IsItalic(), style->IsBold(),
+			    style->IsUnderlined());
 }
 
 void TextCell::SetFont(AFontSize fontsize) {
   wxDC *dc = m_configuration->GetDC();
-  dc->SetFont(*GetFont(fontsize));
+  auto font = GetFont(fontsize);
+//  if(m_configuration->GetLastFontUsed() != font.get())
+    {
+      m_configuration->SetLastFontUsed(font);
+      dc->SetFont(*font);
+    }
 }
 
 bool TextCell::IsOperator() const {
@@ -546,7 +539,7 @@ wxString TextCell::ToString() const {
     text.Replace(wxT("\u2794"), wxT("-->"));
     text.Replace(wxT("\u2192"), wxT("->"));
   }
-  switch (m_textStyle) {
+  switch (GetTextStyle()) {
   case TS_VARIABLE:
   case TS_FUNCTION:
     // The only way for variable or function names to contain quotes and
@@ -604,7 +597,7 @@ wxString TextCell::ToMatlab() const {
     text = wxT("i");
   else if (text == wxT("%pi"))
     text = wxString(wxT("pi"));
-  switch (m_textStyle) {
+  switch (GetTextStyle()) {
   case TS_VARIABLE:
   case TS_FUNCTION:
     // The only way for variable or function names to contain quotes and

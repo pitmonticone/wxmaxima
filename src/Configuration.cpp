@@ -50,6 +50,91 @@
 #endif
 
 Configuration::Configuration(wxDC *dc, InitOpt options) : m_dc(dc) {
+  if(m_styleNames.empty())
+    {
+      m_styleNames[TS_CODE_DEFAULT        ] = _("Code Default"); 
+      m_styleNames[TS_VARIABLE            ] = _("Output: Variable names");
+      m_styleNames[TS_NUMBER              ] = _("Output: Numbers and Digits");
+      m_styleNames[TS_FUNCTION            ] = _("Output: Function names");
+      m_styleNames[TS_SPECIAL_CONSTANT    ] = _("Output: Special constants (%e,%i)");
+      m_styleNames[TS_GREEK_CONSTANT      ] = _("Output: Latin names as greek symbols");
+      m_styleNames[TS_STRING              ] = _("Output: Strings");
+      m_styleNames[TS_INPUT               ] = _("Maxima input");
+      m_styleNames[TS_MAIN_PROMPT         ] = _("Input labels");
+      m_styleNames[TS_OTHER_PROMPT        ] = _("Maxima question labels");
+      m_styleNames[TS_LABEL               ] = _("Output labels");
+      m_styleNames[TS_USERLABEL           ] = _("User-defined labels");
+      m_styleNames[TS_HIGHLIGHT           ] = _("Highlight (box)");
+      m_styleNames[TS_WARNING             ] = _("Maxima warnings");
+      m_styleNames[TS_ERROR               ] = _("Maxima errors");
+      m_styleNames[TS_ASCIIMATHS          ] = _("ASCII maths");
+      m_styleNames[TS_TEXT                ] = _("Standard Text");
+      m_styleNames[TS_HEADING6            ] = _("Heading 6");
+      m_styleNames[TS_HEADING5            ] = _("Heading 5");
+      m_styleNames[TS_SUBSUBSECTION       ] = _("Subsubsection cell (Heading 4)");
+      m_styleNames[TS_SUBSECTION          ] = _("Subsection cell (Heading 3)");
+      m_styleNames[TS_SECTION             ] = _("Section cell (Heading 2)");
+      m_styleNames[TS_TITLE               ] = _("Title cell (Heading 1)");
+      m_styleNames[TS_TEXT_BACKGROUND     ] = _("Text cell background");
+      m_styleNames[TS_DOCUMENT_BACKGROUND ] = _("Document background");
+      m_styleNames[TS_CELL_BRACKET        ] = _("Cell bracket fill, Inactive");
+      m_styleNames[TS_ACTIVE_CELL_BRACKET ] = _("Cell bracket fill, Active");
+      m_styleNames[TS_CURSOR              ] = _("Cursor color");
+      m_styleNames[TS_SELECTION           ] = _("Selection color");
+      m_styleNames[TS_EQUALSSELECTION     ] = _("Color of text equal to selection");
+      m_styleNames[TS_OUTDATED            ] = _("Color of Outdated cells");
+      m_styleNames[TS_CODE_VARIABLE       ] = _("Code highlighting: Variables");
+      m_styleNames[TS_CODE_FUNCTION       ] = _("Code highlighting: Functions");
+      m_styleNames[TS_CODE_COMMENT        ] = _("Code highlighting: Comments");
+      m_styleNames[TS_CODE_NUMBER         ] = _("Code highlighting: Numbers");
+      m_styleNames[TS_CODE_STRING         ] = _("Code highlighting: Strings");
+      m_styleNames[TS_CODE_OPERATOR       ] = _("Code highlighting: Operators");
+      m_styleNames[TS_CODE_LISP           ] = _("Code highlighting: Lisp");
+      m_styleNames[TS_CODE_ENDOFLINE      ] = _("Code highlighting: End of line markers");
+      m_styleNames[TS_MATH                ] = _("Math Default");
+    }
+  if(m_codeStyles.empty())
+    {
+      m_codeStyles.push_back(TS_CODE_VARIABLE);
+      m_codeStyles.push_back(TS_CODE_FUNCTION);
+      m_codeStyles.push_back(TS_CODE_COMMENT);
+      m_codeStyles.push_back(TS_CODE_NUMBER);
+      m_codeStyles.push_back(TS_CODE_STRING);
+      m_codeStyles.push_back(TS_CODE_OPERATOR);
+      m_codeStyles.push_back(TS_CODE_LISP);
+      m_codeStyles.push_back(TS_CODE_ENDOFLINE);
+      m_codeStyles.push_back(TS_EQUALSSELECTION);
+    }
+  if(m_2dMathStyles.empty())
+    {
+      m_2dMathStyles.push_back(TS_VARIABLE);
+      m_2dMathStyles.push_back(TS_NUMBER);
+      m_2dMathStyles.push_back(TS_FUNCTION);
+      m_2dMathStyles.push_back(TS_SPECIAL_CONSTANT);
+      m_2dMathStyles.push_back(TS_GREEK_CONSTANT);
+      m_2dMathStyles.push_back(TS_STRING);
+      m_2dMathStyles.push_back(TS_INPUT);
+      m_2dMathStyles.push_back(TS_MAIN_PROMPT);
+      m_2dMathStyles.push_back(TS_OTHER_PROMPT);
+      m_2dMathStyles.push_back(TS_LABEL);
+      m_2dMathStyles.push_back(TS_USERLABEL);
+      m_2dMathStyles.push_back(TS_HIGHLIGHT);
+      m_2dMathStyles.push_back(TS_WARNING);
+      m_2dMathStyles.push_back(TS_ERROR);
+      m_2dMathStyles.push_back(TS_ASCIIMATHS);
+      m_2dMathStyles.push_back(TS_TEXT);
+    }
+  if(m_colorOnlyStyles.empty())
+    {
+      m_colorOnlyStyles.push_back(TS_TEXT_BACKGROUND);
+      m_colorOnlyStyles.push_back(TS_DOCUMENT_BACKGROUND);
+      m_colorOnlyStyles.push_back(TS_CELL_BRACKET);
+      m_colorOnlyStyles.push_back(TS_ACTIVE_CELL_BRACKET);
+      m_colorOnlyStyles.push_back(TS_CURSOR);
+      m_colorOnlyStyles.push_back(TS_SELECTION);
+      m_colorOnlyStyles.push_back(TS_EQUALSSELECTION);
+      m_colorOnlyStyles.push_back(TS_OUTDATED);
+    }
   m_maximaOperators["("] = 1;
   m_maximaOperators["/"] = 1;
   m_maximaOperators["{"] = 1;
@@ -189,7 +274,7 @@ void Configuration::ResetAllToDefaults(InitOpt options) {
   m_invertBackground = false;
   m_undoLimit = 0;
   m_recentItems = 10;
-  m_parenthesisDrawMode = unknown;
+  m_parenthesisDrawMode = ascii;
   m_zoomFactor = 1.0; // affects returned fontsizes
   m_useSVG = false;
   m_changeAsterisk = true;
@@ -236,7 +321,7 @@ void Configuration::ResetAllToDefaults(InitOpt options) {
   m_showLength = 2;
   m_useUnicodeMaths = true;
   m_offerKnownAnswers = true;
-  m_parenthesisDrawMode = unknown;
+  m_parenthesisDrawMode = ascii;
   m_autoWrap = 3;
   m_displayedDigits = 100;
   m_autoIndent = true;
@@ -382,6 +467,9 @@ void Configuration::InitStyles() {
   wxFont monospace(10, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL,
                    wxFONTWEIGHT_NORMAL);
   m_styles[TS_ASCIIMATHS].SetFontName(monospace.GetFaceName());
+  m_styles[TS_ASCIIMATHS].FontSize(12.0);
+  m_styles[TS_TEXT].SetFontName(monospace.GetFaceName());
+  m_styles[TS_TEXT].FontSize(12.0);
   m_styles[TS_CODE_DEFAULT].Bold().Italic().FontSize(12);
   m_styles[TS_MATH].FontSize(12.0);
 
@@ -748,54 +836,76 @@ bool Configuration::HideMarkerForThisMessage(wxString message) {
 //TODO: Don't underline the section number of titles
 void Configuration::MakeStylesConsistent()
 {
-  std::vector<TextStyle> specialCodeStyles;
-  specialCodeStyles.push_back(TS_CODE_VARIABLE);
-  specialCodeStyles.push_back(TS_CODE_COMMENT);
-  specialCodeStyles.push_back(TS_CODE_NUMBER);
-  specialCodeStyles.push_back(TS_CODE_STRING);
-  specialCodeStyles.push_back(TS_CODE_OPERATOR);
-  specialCodeStyles.push_back(TS_CODE_LISP);
-  specialCodeStyles.push_back(TS_CODE_ENDOFLINE);
-  specialCodeStyles.push_back(TS_CURSOR);
-  specialCodeStyles.push_back(TS_SELECTION);
-  specialCodeStyles.push_back(TS_EQUALSSELECTION);
-  for(auto style : specialCodeStyles)
+  for(auto style : GetCodeStylesList())
     {
-      m_styles[style].SetFamily(GetStyle(TS_CODE_DEFAULT).GetFamily());
-      m_styles[style].SetEncoding(GetStyle(TS_CODE_DEFAULT).GetEncoding());
-      m_styles[style].SetFontSize(GetStyle(TS_CODE_DEFAULT).GetFontSize());
-      m_styles[style].SetFontName(GetStyle(TS_CODE_DEFAULT).GetFontName());
+      m_styles[style].SetFamily(GetStyle(TS_CODE_DEFAULT)->GetFamily());
+      m_styles[style].SetEncoding(GetStyle(TS_CODE_DEFAULT)->GetEncoding());
+      m_styles[style].SetFontSize(GetStyle(TS_CODE_DEFAULT)->GetFontSize());
+      m_styles[style].SetFontName(GetStyle(TS_CODE_DEFAULT)->GetFontName());
+      m_styles[style].SetBold(GetStyle(TS_CODE_DEFAULT)->IsBold());
+      m_styles[style].SetItalic(GetStyle(TS_CODE_DEFAULT)->IsItalic());
+      m_styles[style].SetUnderlined(GetStyle(TS_CODE_DEFAULT)->IsUnderlined());
+      m_styles[style].CantChangeFontName(true);
+      m_styles[style].CantChangeFontVariant(true);
     }
 
-  std::vector<TextStyle> specialMathStyles;
-  specialMathStyles.push_back(TS_VARIABLE);
-  specialMathStyles.push_back(TS_NUMBER);
-  specialMathStyles.push_back(TS_FUNCTION);
-  specialMathStyles.push_back(TS_SPECIAL_CONSTANT);
-  specialMathStyles.push_back(TS_GREEK_CONSTANT);
-  specialMathStyles.push_back(TS_STRING);
-  specialMathStyles.push_back(TS_INPUT);
-  specialMathStyles.push_back(TS_MAIN_PROMPT);
-  specialMathStyles.push_back(TS_OTHER_PROMPT);
-  specialMathStyles.push_back(TS_LABEL);
-  specialMathStyles.push_back(TS_USERLABEL);
-  specialMathStyles.push_back(TS_HIGHLIGHT);
-  specialMathStyles.push_back(TS_WARNING);
-  specialMathStyles.push_back(TS_ERROR);
-  specialMathStyles.push_back(TS_ASCIIMATHS);
-  specialMathStyles.push_back(TS_TEXT);
-  specialMathStyles.push_back(TS_OUTDATED);
-  for(auto style : specialCodeStyles)
+  for(auto style : GetMathStylesList())
     {
-      m_styles[style].SetFontSize(GetStyle(TS_MATH).GetFontSize());
-      if(style != TS_ASCIIMATHS)
+      if((style != TS_ASCIIMATHS) && (style != TS_TEXT))
 	{
-	  m_styles[style].SetFamily(GetStyle(TS_MATH).GetFamily());
-	  m_styles[style].SetEncoding(GetStyle(TS_MATH).GetEncoding());
-	  m_styles[style].SetFontName(GetStyle(TS_MATH).GetFontName());
+	  m_styles[style].SetFontSize(GetStyle(TS_MATH)->GetFontSize());
+	  m_styles[style].SetFamily(GetStyle(TS_MATH)->GetFamily());
+	  m_styles[style].SetEncoding(GetStyle(TS_MATH)->GetEncoding());
+	  m_styles[style].SetFontName(GetStyle(TS_MATH)->GetFontName());
+	  m_styles[style].CantChangeFontName(true);
 	}
     }
+
+  std::vector<TextStyle> m_colorOnlyStyles;
+  for(auto style : GetColorOnlyStylesList())
+    {
+      m_styles[style].SetFamily(GetStyle(TS_CODE_DEFAULT)->GetFamily());
+      m_styles[style].SetEncoding(GetStyle(TS_CODE_DEFAULT)->GetEncoding());
+      m_styles[style].SetFontSize(GetStyle(TS_CODE_DEFAULT)->GetFontSize());
+      m_styles[style].SetFontName(GetStyle(TS_CODE_DEFAULT)->GetFontName());
+      m_styles[style].SetBold(GetStyle(TS_CODE_DEFAULT)->IsBold());
+      m_styles[style].SetItalic(GetStyle(TS_CODE_DEFAULT)->IsItalic());
+      m_styles[style].SetUnderlined(GetStyle(TS_CODE_DEFAULT)->IsUnderlined());
+      m_styles[style].CantChangeFontName(true);
+      m_styles[style].CantChangeFontVariant(true);
+    }
 }
+
+bool Configuration::StyleAffectsCode(TextStyle style)
+{
+  bool retval = false;
+  for(auto i : GetCodeStylesList())
+    if(style == i)
+      retval = true;
+  return retval;
+}
+
+bool Configuration::StyleAffectsMathOut(TextStyle style)
+{
+  bool retval = false;
+  for(auto i : GetMathStylesList())
+    if(style == i)
+      retval = true;
+  return retval;
+}
+
+bool Configuration::StyleAffectsColorOnly(TextStyle style)
+{
+  bool retval = false;
+  for(auto i : GetColorOnlyStylesList())
+    if(style == i)
+      retval = true;
+  return retval;
+}
+
+std::vector<TextStyle> m_codeStyles;
+std::vector<TextStyle> m_2dMathStyles;
+std::vector<TextStyle> m_colorOnlyStyles;
 
 wxColor Configuration::DefaultBackgroundColor() {
   if (InvertBackground())
@@ -877,23 +987,6 @@ long Configuration::GetLineWidth() const {
   return lineWidth;
 }
 
-Configuration::drawMode Configuration::GetParenthesisDrawMode() {
-  if (m_parenthesisDrawMode == unknown) {
-    
-    static const wxString parens{(wxT(PAREN_OPEN_TOP_UNICODE) wxT(
-								  PAREN_OPEN_EXTEND_UNICODE) wxT(PAREN_OPEN_BOTTOM_UNICODE))};
-
-    m_parenthesisDrawMode = handdrawn;
-    auto style = GetStyle(TS_FUNCTION);
-
-    if (CharsExistInFont(style.GetFont(), parens)) {
-      m_parenthesisDrawMode = assembled_unicode;
-      return m_parenthesisDrawMode;
-    }
-  }
-  return m_parenthesisDrawMode;
-}
-
 //! A comparison operator for wxImage
 static bool operator==(const wxImage &a, const wxImage &b) {
   if (a.GetSize() != b.GetSize())
@@ -907,6 +1000,11 @@ static bool operator==(const wxImage &a, const wxImage &b) {
 }
 
 void Configuration::SetZoomFactor(double newzoom) {
+  if(m_zoomFactor == newzoom)
+    return;
+
+  for (auto i: m_styles)
+    i.ClearCache();
   if (newzoom > GetMaxZoomFactor())
     newzoom = GetMaxZoomFactor();
   if (newzoom < GetMinZoomFactor())
@@ -989,19 +1087,7 @@ bool Configuration::CharsExistInFont(const wxFont &font,
 
 wxString Configuration::GetFontName(TextStyle const ts) const {
   wxString retval;
-
-  if (ts == TS_TITLE || ts == TS_SUBSECTION || ts == TS_SUBSUBSECTION ||
-      ts == TS_HEADING5 || ts == TS_HEADING6 || ts == TS_SECTION ||
-      ts == TS_TEXT || ts == TS_ASCIIMATHS)
-    retval = m_styles[ts].GetFontName();
-
-  else if (ts == TS_NUMBER || ts == TS_VARIABLE || ts == TS_FUNCTION ||
-           ts == TS_SPECIAL_CONSTANT || ts == TS_STRING)
-    retval = m_styles[TS_MATH].GetFontName();
-
-  if (retval.empty())
-    retval = m_styles[TS_CODE_DEFAULT].GetFontName();
-
+  retval = m_styles[ts].GetFontName();
   return retval;
 }
 
@@ -1492,7 +1578,7 @@ void Configuration::WriteStyles(const wxString &file) {
     config = wxConfig::Get();
   else
     config = new wxFileConfig(wxT("wxMaxima"), wxEmptyString, file);
-
+  
   WriteStyles(config);
   if (file != wxEmptyString) {
     config->Flush();
@@ -1500,53 +1586,12 @@ void Configuration::WriteStyles(const wxString &file) {
   }
 }
 const wxString &Configuration::GetStyleName(TextStyle style) const {
-  static const wxString *names[NUMBEROFSTYLES] = {
-    &_("Default"),
-    &_("Variables"),
-    &_("Numbers"),
-    &_("Function names"),
-    &_("Special constants"),
-    &_("Greek Constants"),
-    &_("Strings"),
-    &_("Maxima input"),
-    &_("Input labels"),
-    &_("Maxima questions"),
-    &_("Output labels"),
-    &_("User-defined labels"),
-    &_("Highlight (dpart)"),
-    &_("Maxima warnings"),
-    &_("Maxima errors"),
-    &_("ASCII maths"),
-    &_("Text cell"),
-    &_("Heading 6"),
-    &_("Heading 5"),
-    &_("Subsubsection cell (Heading 4)"),
-    &_("Subsection cell (Heading 3)"),
-    &_("Section cell (Heading 2)"),
-    &_("Title cell (Heading 1)"),
-    &_("Text cell background"),
-    &_("Document background"),
-    &_("Cell bracket"),
-    &_("Active cell bracket"),
-    &_("Cursor"),
-    &_("Selection"),
-    &_("Text equal to selection"),
-    &_("Outdated cells"),
-    &_("Code highlighting: Variables"),
-    &_("Code highlighting: Functions"),
-    &_("Code highlighting: Comments"),
-    &_("Code highlighting: Numbers"),
-    &_("Code highlighting: Strings"),
-    &_("Code highlighting: Operators"),
-    &_("Code highlighting: Lisp"),
-    &_("Code highlighting: End of line"),
-    &_("Math Default"),
-  };
   if (style >= 0 && style < NUMBEROFSTYLES)
-    return *names[style];
-
-  return wxm::emptyString;
+    return m_styleNames[style];
+  else
+    return wxm::emptyString;
 }
 
 wxString Configuration::m_maximaLocation_override;
 wxString Configuration::m_configfileLocation_override;
+std::unordered_map<TextStyle, wxString> Configuration::m_styleNames;

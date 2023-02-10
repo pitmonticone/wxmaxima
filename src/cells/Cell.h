@@ -468,7 +468,9 @@ public:
   //! Sets the text style according to the type
   virtual void SetType(CellType type);
 
-  TextStyle GetStyle() const
+  const TextStyle &GetStyle() const
+    { return m_textStyle; }
+  const TextStyle &GetTextStyle() const
     { return m_textStyle; }
 
   //! Sets the drawing pen to the cell's default foreground color 

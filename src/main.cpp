@@ -34,6 +34,10 @@
 #include <wx/fs_zip.h>
 #include <wx/image.h>
 #include <wx/intl.h>
+#include <wx/translation.h>
+#if wxCHECK_VERSION(3, 1, 6)
+#include <wx/uilocale.h>
+#endif
 #include <wx/sysopt.h>
 #include <wx/tipdlg.h>
 #include <wx/utils.h>
@@ -157,7 +161,18 @@ int WINAPI WinMain(HINSTANCE hI, HINSTANCE hPrevI, LPSTR lpCmdLine,
 #endif
 
 bool MyApp::OnInit() {
-  // On the Mac if any of these commands outputs text to stderr maxima fails to
+  {
+#if wxCHECK_VERSION(3, 1, 6)
+    wxLogNull suppressErrorMessages;
+    wxUILocale::UseDefault();
+#else
+      m_locale = std::unique_ptr<wxLocale>(new wxLocale);
+      m_locale->Init(lang);
+#endif
+  }
+  wxLogStderr noErrorDialogs;
+  m_translations = std::unique_ptr<wxTranslations>(new wxTranslations());
+  wxTranslations::Set(m_translations.get());
   // connect to wxMaxima. We therefore delay all output to the log until there
   // is a window that can display it on the GUI instead.
   wxLogBuffer noStdErr;
@@ -212,31 +227,31 @@ bool MyApp::OnInit() {
     if (!wxDirExists(tempDir))
       wxMkdir(tempDir, 0x700);
 
-    m_locale.AddCatalogLookupPathPrefix(m_dirstruct.LocaleDir());
-    m_locale.AddCatalogLookupPathPrefix(m_dirstruct.LocaleDir() +
-                                        wxT("/wxwin"));
-    m_locale.AddCatalogLookupPathPrefix(wxT("/usr/share/locale"));
-    m_locale.AddCatalogLookupPathPrefix(wxT("/usr/local/share/locale"));
-    long lang = wxLocale::GetSystemLanguage();
-    wxConfig(wxT("wxMaxima"), wxEmptyString, m_configFileName)
-      .Read(wxT("language"), &lang);
-    if (lang == wxLANGUAGE_UNKNOWN)
-      lang = wxLANGUAGE_DEFAULT;
-
+    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(m_dirstruct.LocaleDir());
+    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(m_dirstruct.LocaleDir() +
+							 wxT("/wxwin"));
+    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(wxT("/usr/share/locale"));
+    wxFileTranslationsLoader::AddCatalogLookupPathPrefix(wxT("/usr/local/share/locale"));
+    wxLanguage lang;
     {
-      wxLogNull suppressErrorMessages;
-	m_locale.Init(lang);
+      long lng = wxLocale::GetSystemLanguage();
+      wxConfig(wxT("wxMaxima"), wxEmptyString, m_configFileName)
+	.Read(wxT("language"), &lng);
+      if (lng == wxLANGUAGE_UNKNOWN)
+	lng = wxLANGUAGE_DEFAULT;
+      lang = static_cast<wxLanguage>(lng);
     }
     
-    // Do we reckong we improve something if we set maxima's language, as well?
+    // Do we reckon we improve something if we set maxima's language, as well?
     if ((wxLocale::IsAvailable(lang)) && (lang != wxLANGUAGE_DEFAULT)) {
+      wxTranslations::Get()->SetLanguage(lang);
       // Set maxima's language, as well.
-      wxString localeName = m_locale.GetCanonicalName();
+      wxString localeName = wxLocale().GetCanonicalName();
       if (lang != wxLocale::GetSystemLanguage()) {
-        if (m_locale.GetSystemEncoding() == wxFONTENCODING_UTF16)
+        if (wxLocale().GetSystemEncoding() == wxFONTENCODING_UTF16)
           localeName += wxT(".UTF-16");
         else {
-          if (m_locale.GetSystemEncoding() == wxFONTENCODING_UTF32)
+          if (wxLocale().GetSystemEncoding() == wxFONTENCODING_UTF32)
             localeName += wxT(".UTF-32");
           else {
             localeName += wxT(".UTF-8");
@@ -245,13 +260,14 @@ bool MyApp::OnInit() {
         wxSetEnv(wxT("LANG"), localeName);
       }
     }
-    m_locale.AddCatalog(wxT("wxMaxima"));
+    wxTranslations::Get()->AddCatalog(wxT("wxMaxima"));
     /* wxWidgets introduced version suffixes to gettext catalogs, see:
      * https://github.com/wxWidgets/wxWidgets/commit/ded4da5 */
     /* so try to load a catalog with this suffix */
-    m_locale.AddCatalog(
-			"wxstd-" wxSTRINGIZE(wxMAJOR_VERSION) "." wxSTRINGIZE(wxMINOR_VERSION));
-    m_locale.AddCatalog(wxT("wxstd"));
+    wxTranslations::Get()->AddCatalog("wxstd-"
+				      wxSTRINGIZE(wxMAJOR_VERSION) "."
+				      wxSTRINGIZE(wxMINOR_VERSION));
+    wxTranslations::Get()->AddCatalog(wxT("wxstd"));
   }
 
   bool exitAfterEval = false;
@@ -435,6 +451,7 @@ bool MyApp::OnInit() {
 int MyApp::OnExit() { return 0; }
 
 int MyApp::OnRun() {
+  wxLogStderr noErrorDialogs;
   wxApp::OnRun();
   return 0;
 }
@@ -451,7 +468,7 @@ void MyApp::NewWindow(const wxString &file, bool evalOnStartup,
   if (numberOfWindows > 1)
     title = wxString::Format(_("wxMaxima %d"), numberOfWindows);
 
-  wxMaxima *frame = new wxMaxima(NULL, -1, &m_locale, title, file);
+  wxMaxima *frame = new wxMaxima(NULL, -1, title, file);
   if (wxmData) {
     // Unzip the .wxm file
     wxMemoryInputStream istream(wxmData, wxmLen);

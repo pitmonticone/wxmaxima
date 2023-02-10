@@ -192,10 +192,10 @@ void wxMaxima::ConfigChanged() {
   m_symbolsPane->UpdateUserSymbols();
 }
 
-wxMaxima::wxMaxima(wxWindow *parent, int id, wxLocale *locale,
+wxMaxima::wxMaxima(wxWindow *parent, int id,
                    const wxString title, const wxString &filename,
                    const wxPoint pos, const wxSize size)
-  : wxMaximaFrame(parent, id, locale, title, pos, size,
+  : wxMaximaFrame(parent, id, title, pos, size,
 		  wxDEFAULT_FRAME_STYLE | wxSYSTEM_MENU | wxCAPTION,
 		  m_topLevelWindows.empty()),
     m_openFile(filename), m_gnuplotcommand("gnuplot"),
@@ -2870,7 +2870,7 @@ void wxMaxima::ReadMiscText(const wxString &data) {
   auto style = MC_TYPE_ASCIIMATHS;
 
   if (data.StartsWith(wxT("(%")))
-    style = MC_TYPE_ASCIIMATHS;
+    style = MC_TYPE_TEXT;
 
   if (data.IsEmpty())
     return;
@@ -4838,11 +4838,13 @@ void wxMaxima::OnIdle(wxIdleEvent &event) {
 
   if (m_worksheet->StatusTextChangedHas()) {
     if (m_worksheet->StatusTextHas()) {
-      StatusText(m_worksheet->GetStatusText());
+	m_statusBar->SetStatusText(m_worksheet->GetStatusText());
     }
+    else
+	m_statusBar->SetStatusText(m_leftStatusText);
   }
 
-  if (m_newStatusText) {
+  if ((m_newStatusText) && (!m_worksheet->StatusTextHas())) {
     m_statusBar->SetStatusText(m_leftStatusText);
     
     m_newStatusText = false;

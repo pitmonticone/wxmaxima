@@ -41,10 +41,12 @@ class FontVariantCache final
 public:
   FontVariantCache(wxString fontName);
   ~FontVariantCache(){}
+  void ClearCache();
   std::shared_ptr<wxFont> GetFont (double size,
                                    bool isItalic,
                                    bool isBold,
                                    bool isUnderlined);
+  const wxString& GetFaceName() const {return m_fontName;}
 private:
   int GetIndex (
     bool isItalic,

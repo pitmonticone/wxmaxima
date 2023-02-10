@@ -48,9 +48,7 @@ static constexpr uint32_t MAKE_RGB(uint32_t r, uint32_t g, uint32_t b)
  * It is a well-performing replacement for wxFontInfo, with additional
  * color attribute.
  *
- * The text styles are also used as keys into the FontCache. They are
- * designed to be small, quick to compare for equality and order (less-than),
- * and quick to copy.
+ * The text styles are also used as keys into the FontCache. 
  *
  */
 class Style final
@@ -84,7 +82,6 @@ public:
   constexpr static bool Default_Strikethrough{false};
   constexpr static AFontSize Default_FontSize{10.0f};
   constexpr static uint32_t Default_ColorRGB{MAKE_RGB(0, 0, 0)};
-  static wxString Default_FontName();
   static const wxColor &Default_Color();
 
   wxFontFamily GetFamily() const;
@@ -97,8 +94,7 @@ public:
   bool IsSlant() const { return GetFontStyle() == wxFONTSTYLE_SLANT; }
   bool IsUnderlined() const;
   bool IsStrikethrough() const;
-  wxString GetFontName() const;
-  const wxString &GetNameStr() const;
+  const wxString &GetFontName() const;
   AFontSize GetFontSize() const;
   uint32_t GetRGBColor() const;
   wxColor GetColor() const { return wxColor(GetRGBColor()); }
@@ -130,7 +126,6 @@ public:
   Style& Slant(bool slant = true) { return SetSlant(slant), *this; }
   Style& Underlined(bool underlined = true) { return SetUnderlined(underlined), *this; }
   Style& Strikethrough(bool strikethrough = true) { return SetStrikethrough(strikethrough), *this; }
-  Style& FontName(class wxString fontName) { return SetFontName(fontName), *this; }
   Style& FontSize(float size) { return SetFontSize(AFontSize(size)), *this; }
   Style& FontSize(AFontSize fontSize) { return SetFontSize(fontSize), *this; }
   Style& RGBColor(uint32_t rgb) { return SetRGBColor(rgb), *this; }
@@ -139,10 +134,12 @@ public:
   Style& Color(wxSystemColour sysColour) { return SetColor(sysColour), *this; }
   Style& ChangeLightness(int alpha) { return SetColor(GetColor().ChangeLightness(alpha)), *this; }
 
+  bool CantChangeFontName() const {return m.cantChangeFontName;}
+  bool CantChangeFontVariant() const {return m.cantChangeFontVariant;}
+  void CantChangeFontName(bool changeForbidden) {m.cantChangeFontName = changeForbidden;}
+  void CantChangeFontVariant(bool changeForbidden) {m.cantChangeFontVariant = changeForbidden;}
   wxFontInfo GetAsFontInfo() const;
 
-  bool IsFontEqualTo(const Style &) const;
-  bool IsStyleEqualTo(const Style &o) const;
 
   bool IsFontOk();
   wxFont GetFont() const;
@@ -160,25 +157,23 @@ public:
     return wxCHECK_VERSION(3, 1, 2); } //-V686 //-V501
   static AFontSize GetFontSize(const wxFont &);
   static void SetFontSize(wxFont &, AFontSize fontSize);
-
-  std::shared_ptr<FontVariantCache> GetFontCache(){return m_fontCache;}
+  void ClearCache()
+    {
+      if(m.fontCache)
+        m.fontCache->ClearCache();
+    }
+  std::shared_ptr<FontVariantCache> GetFontCache() const {return m.fontCache;}
 private:
-  mutable std::shared_ptr<FontVariantCache> m_fontCache;
-
   WX_DECLARE_STRING_HASH_MAP( std::shared_ptr<FontVariantCache>,     // type of the values
                               FontVariantCachesMap); // name of the class
 
-
+  static wxString m_emptyString;
   static FontVariantCachesMap m_fontCaches;
-  friend class FontCache;
-  Style &FromFontNoCache(const wxFont &);
-  void SetFromFontNoCache(const wxFont &);
 
-  struct Data // POD, 40 bytes on 64-bit platforms
+  struct Data
   {
     // 8/4-byte members
-    wxString fontName = Default_FontName();
-    mutable const wxFont *font = nullptr;
+    mutable std::shared_ptr<FontVariantCache> fontCache;
     // 4-byte members
     uint32_t rgbColor = Default_ColorRGB;
     // 2-byte members
@@ -190,24 +185,16 @@ private:
     // 1-byte members
     bool underlined : 1;
     bool strikethrough : 1;
-    bool isNotOK : 1;
+    bool cantChangeFontName    : 1; // !< Allow to change only color, underline etc.
+    bool cantChangeFontVariant : 1; // !< Allow to change only color
 
-    Data() : underlined(false), strikethrough(false), isNotOK(false) {}
-    static constexpr enum class NotOK_t {} NotOK = {};
-    // cppcheck-suppress noExplicitConstructor
-    explicit Data(NotOK_t) : underlined(false), strikethrough(false), isNotOK(true) {}
+    Data() : underlined(false), strikethrough(false), cantChangeFontName(false),
+             cantChangeFontVariant(false) {}
   } m;
 
-  const wxFont& LookupFont() const;
   // cppcheck-suppress noExplicitConstructor
-  Style(Data::NotOK_t) : m(Data::NotOK) {}
 };
 
-//! Equals-comparator of the font size and attributes of the style
-struct StyleFontEquals final
-{
-  bool operator()(const Style &l, const Style &r) const { return l.IsFontEqualTo(r); }
-};
 
 /*! All text styles known to wxMaxima
  *
@@ -216,46 +203,46 @@ struct StyleFontEquals final
  */
 enum TextStyle : int8_t
 {
-  TS_CODE_DEFAULT        = 0,
-  TS_VARIABLE            = 1,
-  TS_NUMBER              = 2,
-  TS_FUNCTION            = 3,
-  TS_SPECIAL_CONSTANT    = 4,
-  TS_GREEK_CONSTANT      = 5,
-  TS_STRING              = 6,
-  TS_INPUT               = 7,
-  TS_MAIN_PROMPT         = 8,
-  TS_OTHER_PROMPT        = 9,
-  TS_LABEL               = 10,
-  TS_USERLABEL           = 11,
-  TS_HIGHLIGHT           = 12,
-  TS_WARNING             = 13,
-  TS_ERROR               = 14,
-  TS_ASCIIMATHS          = 15,
-  TS_TEXT                = 16,
-  TS_HEADING6            = 17,
-  TS_HEADING5            = 18,
-  TS_SUBSUBSECTION       = 19,
-  TS_SUBSECTION          = 20,
-  TS_SECTION             = 21,
-  TS_TITLE               = 22,
-  TS_TEXT_BACKGROUND     = 23,
-  TS_DOCUMENT_BACKGROUND = 24,
-  TS_CELL_BRACKET        = 25,
-  TS_ACTIVE_CELL_BRACKET = 26,
-  TS_CURSOR              = 27,
-  TS_SELECTION           = 28,
-  TS_EQUALSSELECTION     = 29,
-  TS_OUTDATED            = 30,
-  TS_CODE_VARIABLE       = 31,
-  TS_CODE_FUNCTION       = 32,
-  TS_CODE_COMMENT        = 33,
-  TS_CODE_NUMBER         = 34,
-  TS_CODE_STRING         = 35,
-  TS_CODE_OPERATOR       = 36,
-  TS_CODE_LISP           = 37,
-  TS_CODE_ENDOFLINE      = 38,
-  TS_MATH                = 39,  // custom font = math font
+  TS_CODE_DEFAULT       , //<! The font code uses by default
+  TS_CODE_VARIABLE      ,
+  TS_CODE_FUNCTION      ,
+  TS_CODE_COMMENT       ,
+  TS_CODE_NUMBER        ,
+  TS_CODE_STRING        ,
+  TS_CODE_OPERATOR      ,
+  TS_CODE_LISP          ,
+  TS_CODE_ENDOFLINE     ,
+  TS_ASCIIMATHS         ,
+  TS_MATH               ,
+  TS_TEXT               ,
+  TS_VARIABLE           ,
+  TS_NUMBER             ,
+  TS_FUNCTION           ,
+  TS_SPECIAL_CONSTANT   ,
+  TS_GREEK_CONSTANT     ,
+  TS_STRING             ,
+  TS_INPUT              ,
+  TS_OUTDATED           ,
+  TS_MAIN_PROMPT        ,
+  TS_OTHER_PROMPT       ,
+  TS_LABEL              ,
+  TS_USERLABEL          ,
+  TS_HIGHLIGHT          ,
+  TS_WARNING            ,
+  TS_ERROR              ,
+  TS_TITLE              ,
+  TS_SECTION            ,
+  TS_SUBSECTION         ,
+  TS_SUBSUBSECTION      ,
+  TS_HEADING5           ,
+  TS_HEADING6           ,
+  TS_TEXT_BACKGROUND    ,
+  TS_DOCUMENT_BACKGROUND,
+  TS_CELL_BRACKET       ,
+  TS_ACTIVE_CELL_BRACKET,
+  TS_CURSOR             ,
+  TS_SELECTION          ,
+  TS_EQUALSSELECTION    ,
   NUMBEROFSTYLES, //!< This is not a style, but its value tells us how many styles are defined
   TS_INVALID //!< If a text style cannot be determined this value is used
 };
