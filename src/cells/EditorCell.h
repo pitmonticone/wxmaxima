@@ -299,7 +299,7 @@ public:
         m_firstLineOnly = show;
       }
       // Style the text anew.
-      StyleText();
+      ScheduleRestyle();
     }
 
   bool IsActive() const override;
@@ -468,11 +468,16 @@ public:
     }
 
   //! Get the list of commands, parenthesis, strings and whitespaces in a code cell
-  const MaximaTokenizer::TokenList &GetTokens();
+  const MaximaTokenizer::TokenList &GetDisplayedTokens();
+  //! Get the list of commands, parenthesis, strings and whitespaces including hidden ones
+  const MaximaTokenizer::TokenList &GetAllTokens();
 
+  void ScheduleRestyle()
+    {
+      bool m_tokens_including_hidden_valid = false;
+      bool m_tokens_valid = false;
+    }
 private:
-  MaximaTokenizer::TokenList m_tokens_including_hidden;
-
   //! Did the zoom factor change since the last recalculation?
   bool IsZoomFactorChanged() const;
   //! The zoom factor we had the last time we recalculated this cell.
@@ -593,6 +598,7 @@ private:
   void SetState(const HistoryEntry &state);
   //! Append the editor's state to the history
   void AppendStateToHistory();
+  std::vector<StyledText> &GetStyledText();
 
 //** Large fields
 //**
@@ -604,10 +610,12 @@ private:
   std::vector<wxString> m_wordList;
 
   //! The individual commands, parenthesis, strings and whitespaces a code cell consists of
-  MaximaTokenizer::TokenList m_tokens;
+  mutable MaximaTokenizer::TokenList m_tokens;
+  //! The individual commands, parenthesis, strings and whitespaces including hidden lines
+  mutable MaximaTokenizer::TokenList m_tokens_including_hidden;
 
   wxString m_text;
-  std::vector<StyledText> m_styledText;
+  mutable std::vector<StyledText> m_styledText;
 
   std::vector<HistoryEntry> m_history;
 
@@ -655,6 +663,13 @@ private:
 //**
   AFontStyle m_fontStyle;
   AFontWeight m_fontWeight;
+
+
+  //! Does the list of tokens including hidden items need to be recalculated?
+  mutable bool m_tokens_including_hidden_valid = false;
+  //! Does the list of displayed tokens need to be recalculated?
+  mutable bool m_tokens_valid = false;
+
 
 //** Bitfield objects (2 bytes)
 //**

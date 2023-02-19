@@ -142,7 +142,7 @@ void EditorCell::AddDrawParameter(wxString param) {
     m_positionOfCaret += line.Length();
   }
   m_text += textAfterParameter;
-  StyleText();
+  ScheduleRestyle();
   ResetSize();
 }
 
@@ -280,6 +280,13 @@ wxString EditorCell::ToMatlab(bool dontLimitToSelection) const {
   return text;
 }
 
+std::vector<EditorCell::StyledText> &EditorCell::GetStyledText()
+{
+  if(!m_tokens_valid)
+    StyleText();
+  return m_styledText;
+}
+
 wxString EditorCell::ToRTF() const {
   wxString retval;
 
@@ -309,20 +316,18 @@ wxString EditorCell::ToRTF() const {
     break;
   case MC_TYPE_INPUT: {
     retval += wxT(" ");
-    for (std::vector<StyledText>::const_iterator textSnippet =
-	   m_styledText.begin();
-         textSnippet != m_styledText.end(); ++textSnippet) {
-      wxString text = RTFescape(textSnippet->GetText());
+    for (const auto textSnippet : GetStyledText()) {
+      wxString text = RTFescape(textSnippet.GetText());
 
-      if (textSnippet->IsStyleSet()) {
+      if (textSnippet.IsStyleSet()) {
         retval +=
-	  wxString::Format(wxT("\\cf%i "), static_cast<int>(textSnippet->GetStyle()));
-        retval += RTFescape(textSnippet->GetText());
+	  wxString::Format(wxT("\\cf%i "), static_cast<int>(textSnippet.GetStyle()));
+        retval += RTFescape(textSnippet.GetText());
       } else {
         retval += wxString::Format(wxT("\\cf%i "), static_cast<int>(TS_CODE_DEFAULT));
-        retval += wxT("{") + RTFescape(textSnippet->GetText()) + wxT("}\n");
+        retval += wxT("{") + RTFescape(textSnippet.GetText()) + wxT("}\n");
       }
-      if (textSnippet->GetText().Contains(wxT("\n"))) {
+      if (textSnippet.GetText().Contains(wxT("\n"))) {
         retval += wxT("\\pard\\s21\\li1105\\lin1105\\f0\\fs24 ");
       }
     }
@@ -562,7 +567,7 @@ void EditorCell::Recalculate(AFontSize fontsize) {
     m_widths.clear();
     m_lastZoomFactor = m_configuration->GetZoomFactor();
   }
-  StyleText();
+  ScheduleRestyle();
   wxDC *dc = m_configuration->GetDC();
   SetFont();
 
@@ -580,14 +585,13 @@ void EditorCell::Recalculate(AFontSize fontsize) {
 
   std::vector<StyledText>::const_iterator textSnippet;
 
-  for (textSnippet = m_styledText.begin(); textSnippet != m_styledText.end();
-       ++textSnippet) {
-    if ((textSnippet->GetText().StartsWith(wxT('\n')) ||
-         (textSnippet->GetText().StartsWith(wxT('\r'))))) {
+  for (const auto textSnippet : GetStyledText()) {
+    if ((textSnippet.GetText().StartsWith(wxT('\n')) ||
+         (textSnippet.GetText().StartsWith(wxT('\r'))))) {
       m_numberOfLines++;
-      linewidth = textSnippet->GetIndentPixels();
+      linewidth = textSnippet.GetIndentPixels();
     } else {
-      dc->GetTextExtent(textSnippet->GetText(), &tokenwidth, &tokenheight);
+      dc->GetTextExtent(textSnippet.GetText(), &tokenwidth, &tokenheight);
       linewidth += tokenwidth;
       width = wxMax(width, linewidth);
     }
@@ -623,7 +627,7 @@ wxString EditorCell::ToHTML() const {
   wxString retval;
 
   for (const auto &tmp : OnList(this)) {
-    for (const auto &textSnippet : tmp.m_styledText) {
+    for (const auto &textSnippet : tmp.GetStyledText()) {
       wxString text = PrependNBSP(EscapeHTMLChars(textSnippet.GetText()));
 
       if (textSnippet.IsStyleSet()) {
@@ -832,7 +836,7 @@ void EditorCell::Draw(wxPoint point) {
     wxPoint TextCurrentPoint = TextStartingpoint;
     int lastStyle = -1;
     int lastIndent = 0;
-    for (StyledText &textSnippet : m_styledText) {
+    for (auto textSnippet : GetStyledText()) {
       auto &TextToDraw = textSnippet.GetText();
       int width, height;
 
@@ -1732,7 +1736,7 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
   case WXK_RETURN:
     SaveValue();
     ProcessNewline();
-    StyleText();
+    ScheduleRestyle();
     break;
 
   case WXK_DELETE:
@@ -1787,7 +1791,7 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
 	  m_text.SubString(m_positionOfCaret + 1, m_text.Length());
       }
     }
-    StyleText();
+    ScheduleRestyle();
     break;
 
   case WXK_BACK:
@@ -1803,7 +1807,7 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
 	m_text.SubString(end, m_text.Length());
       m_positionOfCaret = start;
       ClearSelection();
-      StyleText();
+      ScheduleRestyle();
       break;
     } else {
       if (!event.CmdDown()) {
@@ -1868,7 +1872,7 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
         }
       }
     }
-    StyleText();
+    ScheduleRestyle();
     break;
 
   case WXK_TAB:
@@ -1925,7 +1929,7 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
             ClearSelection();
           }
           m_positionOfCaret = start;
-          StyleText();
+	  ScheduleRestyle();
           break;
         } else {
           if (!event.ShiftDown()) {
@@ -1958,7 +1962,7 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
         }
       }
     }
-    StyleText();
+    ScheduleRestyle();
     break;
 
     /* Ignored keys */
@@ -2075,7 +2079,7 @@ bool EditorCell::HandleOrdinaryKey(wxKeyEvent &event) {
       break;
     }
     ClearSelection();
-    StyleText();
+    ScheduleRestyle();
   } // end if (m_selectionStart > -1)
 
   // insert letter if we didn't insert brackets around selection
@@ -2163,7 +2167,7 @@ bool EditorCell::HandleOrdinaryKey(wxKeyEvent &event) {
     }
   } // end if (insertLetter)
 
-  StyleText();
+  ScheduleRestyle();
   return true;
 }
 
@@ -2182,7 +2186,7 @@ bool EditorCell::FindMatchingQuotes() {
   }
 
   long pos = 0;
-  for (auto const &tok : MaximaTokenizer(m_text, m_configuration).PopTokens()) {
+  for (auto const &tok : GetAllTokens()) {
     if ((tok.GetText().StartsWith(wxT("\""))) &&
         (tok.GetText().EndsWith(wxT("\"")))) {
       size_t tokenEnd = pos + tok.GetText().Length() - 1;
@@ -2215,8 +2219,7 @@ void EditorCell::FindMatchingParens() {
       (charUnderCursor == wxT('{'))) {
     int parenLevel = 0;
     long pos = 0;
-    for (auto const &tok :
-	   MaximaTokenizer(m_text, m_configuration).PopTokens()) {
+    for (auto const &tok : GetAllTokens()) {
       if (pos >= m_positionOfCaret) {
         if ((tok.GetText().StartsWith(wxT("("))) ||
             (tok.GetText().StartsWith(wxT("["))) ||
@@ -2338,7 +2341,7 @@ bool EditorCell::AddEnding() {
   if (endingNeeded) {
     m_text += wxT(";");
     m_paren1 = m_paren2 = m_width = -1;
-    StyleText();
+    ScheduleRestyle();
     return true;
   }
   return false;
@@ -2438,8 +2441,8 @@ void EditorCell::SelectPointText(const wxPoint point) {
   int currentLine = 1;
   int indentPixels = 0;
   std::vector<StyledText>::const_iterator textSnippet;
-  for (textSnippet = m_styledText.begin();
-       ((textSnippet != m_styledText.end()) && (currentLine <= lin));
+  for (textSnippet = GetStyledText().begin();
+       ((textSnippet != GetStyledText().end()) && (currentLine <= lin));
        ++textSnippet) {
     if ((textSnippet->GetText() == '\n') || (textSnippet->GetText() == '\r')) {
       indentPixels = textSnippet->GetIndentPixels();
@@ -2452,7 +2455,7 @@ void EditorCell::SelectPointText(const wxPoint point) {
 
     int xpos = 0;
     // Find the text snippet the cursor is in
-    while ((textSnippet != m_styledText.end()) && (xpos < posInCell.x)) {
+    while ((textSnippet != GetStyledText().end()) && (xpos < posInCell.x)) {
       wxString txt = textSnippet->GetText();
       int firstCharWidth;
       firstCharWidth = GetTextSize(txt.Left(1)).GetWidth();
@@ -2472,7 +2475,7 @@ void EditorCell::SelectPointText(const wxPoint point) {
 
     int lastwidth = 0;
     wxString snippet;
-    if (textSnippet != m_styledText.end())
+    if (textSnippet != GetStyledText().end())
       snippet = textSnippet->GetText();
 
     lastwidth = GetTextSize(snippet.Left(1)).GetWidth();
@@ -2563,7 +2566,7 @@ bool EditorCell::IsPointInSelection(wxPoint point) {
   unsigned int currentLine = 1;
   int indentPixels = 0;
 
-  for (const auto &textSnippet : m_styledText) {
+  for (const auto &textSnippet : GetStyledText()) {
     if (currentLine >= lin)
       break;
     if ((textSnippet.GetText() == '\n') || (textSnippet.GetText() == '\r')) {
@@ -2792,7 +2795,7 @@ bool EditorCell::CutToClipboard() {
   // We cannot use SetValue() here, since SetValue() tends to move the cursor.
   m_text =
     m_text.SubString(0, start - 1) + m_text.SubString(end, m_text.Length());
-  StyleText();
+  ScheduleRestyle();
 
   ClearSelection();
   m_paren1 = m_paren2 = -1;
@@ -2823,7 +2826,7 @@ void EditorCell::InsertText(wxString text) {
 
   //  m_width = m_height = m_center = -1;
   //  InvalidateMaxDrop();
-  StyleText();
+  ScheduleRestyle();
 }
 
 void EditorCell::PasteFromClipboard(const bool primary) {
@@ -2837,7 +2840,7 @@ void EditorCell::PasteFromClipboard(const bool primary) {
     wxTheClipboard->GetData(obj);
     InsertText(obj.GetText());
     m_containsChanges = true;
-    StyleText();
+    ScheduleRestyle();
   }
   if (primary)
     wxTheClipboard->UsePrimarySelection(false);
@@ -2849,7 +2852,7 @@ int EditorCell::GetLineWidth(unsigned int line, int pos) {
   unsigned int currentLine = 1;
   int indentPixels = 0;
 
-  for (const auto &textSnippet : m_styledText) {
+  for (const auto &textSnippet : GetStyledText()) {
     if (currentLine > line)
       break;
     if ((textSnippet.GetText() == '\n') || (textSnippet.GetText() == '\r')) {
@@ -2865,8 +2868,8 @@ int EditorCell::GetLineWidth(unsigned int line, int pos) {
   unsigned int i = 0;
 
   std::vector<StyledText>::const_iterator textSnippet;
-  for (textSnippet = m_styledText.begin();
-       (textSnippet < m_styledText.end()) && (i < line); ++textSnippet) {
+  for (textSnippet = GetStyledText().begin();
+       (textSnippet < GetStyledText().end()) && (i < line); ++textSnippet) {
     wxString text = textSnippet->GetText();
     if ((text.Right(1) == '\n') || (text.Right(1) == '\r'))
       i++;
@@ -2880,7 +2883,7 @@ int EditorCell::GetLineWidth(unsigned int line, int pos) {
   wxString text;
   int textWidth = 0;
   pos--;
-  for (; (textSnippet < m_styledText.end()) && (pos >= 0); ++textSnippet) {
+  for (; (textSnippet < GetStyledText().end()) && (pos >= 0); ++textSnippet) {
     text = textSnippet->GetText();
     textWidth = GetTextSize(text).GetWidth();
     width += textWidth;
@@ -2901,7 +2904,7 @@ int EditorCell::GetLineWidth(unsigned int line, int pos) {
 
 void EditorCell::SetState(const HistoryEntry &state) {
   m_text = state.text;
-  StyleText();
+  ScheduleRestyle();
   m_positionOfCaret = state.caretPosition;
   SetSelection(state.selStart, state.selEnd);
 }
@@ -3349,20 +3352,29 @@ void EditorCell::StyleTextTexts() {
   ResetSize();
 } // Style text, not code?
 
-const MaximaTokenizer::TokenList &EditorCell::GetTokens() {
-  // If we never show a code cell it might still not be tokenized
-  if (!m_configuration->ShowCodeCells())
+const MaximaTokenizer::TokenList &EditorCell::GetDisplayedTokens() {
+  if(!m_tokens_valid)
     StyleText();
+  return m_tokens;
+}
 
-  if (m_firstLineOnly) {
-    m_firstLineOnly = false;
-    StyleText();
-    m_tokens_including_hidden = m_tokens;
-    m_firstLineOnly = true;
-    StyleText();
-    return m_tokens_including_hidden;
-  } else
-    return m_tokens;
+const MaximaTokenizer::TokenList &EditorCell::GetAllTokens() {
+  if(m_firstLineOnly)
+    {
+      if(!m_tokens_including_hidden_valid)
+	{
+	  m_tokens_including_hidden =
+	    MaximaTokenizer(m_text, m_configuration).PopTokens();
+	  m_tokens_including_hidden_valid = true;
+	}
+      return m_tokens_including_hidden;
+    }
+  else
+    {
+      if(!m_tokens_valid)
+	StyleText();
+      return m_tokens;
+    }
 }
 
 void EditorCell::StyleText() {
@@ -3384,6 +3396,7 @@ void EditorCell::StyleText() {
     StyleTextCode();
   else
     StyleTextTexts();
+  m_tokens_valid = true;
 }
 
 void EditorCell::SetValue(const wxString &text) {
@@ -3432,7 +3445,7 @@ void EditorCell::SetValue(const wxString &text) {
   m_text.Replace(wxT("\u2029"), "\n");
 
   // Style the text.
-  StyleText();
+  ScheduleRestyle();
   ResetData();
 }
 
@@ -3480,7 +3493,7 @@ int EditorCell::ReplaceAll(wxString oldString, const wxString &newString,
     m_text = newText;
     m_containsChanges = true;
     ClearSelection();
-    StyleText();
+    ScheduleRestyle();
   }
 
   // If text is selected setting the selection again updates m_selectionString
@@ -3607,8 +3620,7 @@ bool EditorCell::ReplaceSelection(const wxString &oldStr,
   wxString text_left = text.SubString(0, start - 1);
   wxString text_right = text.SubString(end, text.Length());
   m_text = text_left + newString + text_right;
-  StyleText();
-
+  ScheduleRestyle();
   m_containsChanges = true;
   m_positionOfCaret = start + newString.Length();
 
@@ -3627,7 +3639,7 @@ bool EditorCell::ReplaceSelection(const wxString &oldStr,
   if (GetType() == MC_TYPE_INPUT)
     FindMatchingParens();
 
-  StyleText();
+  ScheduleRestyle();
   return true;
 }
 
@@ -3642,31 +3654,27 @@ TextStyle EditorCell::GetSelectionStyle() const {
   long pos = 0;
 
   if (SelectionActive()) {
-    for (std::vector<StyledText>::const_iterator textSnippet =
-	   m_styledText.begin();
-         textSnippet != m_styledText.end(); ++textSnippet) {
-      wxString text = textSnippet->GetText();
+    for (const auto textSnippet: GetStyledText()) {
+      wxString text = textSnippet.GetText();
       if ((wxMin(m_selectionStart, m_selectionEnd) <= pos) &&
           (pos + text.Length() < static_cast<unsigned long>(wxMax(m_selectionStart, m_selectionEnd))) &&
           (wxMax(m_selectionStart, m_selectionEnd) >= 0)) {
-        if (textSnippet->IsStyleSet())
-          return textSnippet->GetStyle();
+        if (textSnippet.IsStyleSet())
+          return textSnippet.GetStyle();
       }
       if (pos > m_selectionEnd)
         return TS_INVALID;
       pos += text.Length();
     }
   } else {
-    for (std::vector<StyledText>::const_iterator textSnippet =
-	   m_styledText.begin();
-         textSnippet != m_styledText.end(); ++textSnippet) {
-      wxString text = textSnippet->GetText();
+    for (const auto textSnippet: GetStyledText()) {
+      wxString text = textSnippet.GetText();
       if ((m_positionOfCaret >= pos) &&
 	  (static_cast<unsigned long>(m_positionOfCaret) < pos + text.Length()) &&
 	  (m_positionOfCaret >= 0) &&
 	  (pos + text.Length() >= 0)) {
-        if (textSnippet->IsStyleSet())
-          return textSnippet->GetStyle();
+        if (textSnippet.IsStyleSet())
+          return textSnippet.GetStyle();
       }
       if (pos > m_selectionEnd)
         return TS_INVALID;
@@ -3856,6 +3864,16 @@ wxAccStatus EditorCell::GetRole(int childId, wxAccRole *role) const {
   } else {
     return wxACC_FAIL;
   }
+}
+
+const std::vector<StyledText> &EditorCell::GetStyledText()
+{
+  if(!m_tokens_valid);
+  {
+    StyleText();
+    m_tokens_valid = true;
+  }
+  return m_styledText;
 }
 
 #endif
