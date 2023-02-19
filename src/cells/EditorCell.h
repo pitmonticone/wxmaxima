@@ -173,10 +173,10 @@ public:
     For cells containing text instead of code this function adds a <code>\\r</code> as a marker
     that this line is to be broken here until the window's width changes.
   */
-  void StyleText();
+  void StyleText() const;
   /*! Is Called by StyleText() if this is a code cell */
-  void StyleTextCode();
-  void StyleTextTexts();
+  void StyleTextCode() const;
+  void StyleTextTexts() const;
 
   void Reset();
 
@@ -472,11 +472,9 @@ public:
   //! Get the list of commands, parenthesis, strings and whitespaces including hidden ones
   const MaximaTokenizer::TokenList &GetAllTokens();
 
-  void ScheduleRestyle()
-    {
-      bool m_tokens_including_hidden_valid = false;
-      bool m_tokens_valid = false;
-    }
+  //! Mark this cell as "to be recalculated and to be restyled"
+  void ScheduleRestyle();
+  
 private:
   //! Did the zoom factor change since the last recalculation?
   bool IsZoomFactorChanged() const;
@@ -495,8 +493,11 @@ private:
   class StyledText
   {
   private:
-    //! The text of this text portion
-    wxString m_text;
+    /*! The text of this text portion
+
+      \todo: Can we get of this mutable flag?
+     */
+    mutable wxString m_text;
     //! Chars that mark continued indentation
     wxString m_indentChar;
     //! The cached width of this piece of text
@@ -607,14 +608,18 @@ private:
   StringHash m_widths;
 
   //! A list of all potential autoComplete targets within this cell
-  std::vector<wxString> m_wordList;
+  mutable std::vector<wxString> m_wordList;
 
   //! The individual commands, parenthesis, strings and whitespaces a code cell consists of
   mutable MaximaTokenizer::TokenList m_tokens;
   //! The individual commands, parenthesis, strings and whitespaces including hidden lines
   mutable MaximaTokenizer::TokenList m_tokens_including_hidden;
 
-  wxString m_text;
+  /*! The text this Editor contains
+
+    \todo Get rid of that "mutable" flag
+   */
+  mutable wxString m_text;
   mutable std::vector<StyledText> m_styledText;
 
   std::vector<HistoryEntry> m_history;

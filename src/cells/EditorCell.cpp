@@ -143,7 +143,6 @@ void EditorCell::AddDrawParameter(wxString param) {
   }
   m_text += textAfterParameter;
   ScheduleRestyle();
-  ResetSize();
 }
 
 void EditorCell::SearchStartedHere(int index) const {
@@ -287,7 +286,7 @@ std::vector<EditorCell::StyledText> &EditorCell::GetStyledText()
   return m_styledText;
 }
 
-wxString EditorCell::ToRTF() const {
+wxString EditorCell::ToRTF() {
   wxString retval;
 
   switch (m_type) {
@@ -1192,8 +1191,15 @@ void EditorCell::ProcessEvent(wxKeyEvent &event) {
     FindMatchingParens();
 
   if (m_isDirty)
-    ResetSize();
+    ScheduleRestyle();
   m_displayCaret = true;
+}
+
+void EditorCell::ScheduleRestyle()
+{
+  bool m_tokens_including_hidden_valid = false;
+  bool m_tokens_valid = false;
+  ResetSize();
 }
 
 int EditorCell::GetIndentDepth(wxString text, int positionOfCaret) {
@@ -3016,7 +3022,7 @@ void EditorCell::HandleSoftLineBreaks_Code(
   }
 }
 
-void EditorCell::StyleTextCode() {
+void EditorCell::StyleTextCode() const {
   // We have to style code
   StyledText *lastSpace = NULL;
   size_t lastSpacePos = 0;
@@ -3106,7 +3112,7 @@ void EditorCell::StyleTextCode() {
   std::sort(m_wordList.begin(), m_wordList.end());
 }
 
-void EditorCell::StyleTextTexts() {
+void EditorCell::StyleTextTexts() const {
   // Remove all bullets of item lists as we will introduce them again in the
   // next step, as well.
   m_text.Replace(wxT("\u2022"), wxT("*"));
@@ -3349,7 +3355,6 @@ void EditorCell::StyleTextTexts() {
         m_styledText.push_back(StyledText(wxT("\n"), 0, wxEmptyString));
     }
   }
-  ResetSize();
 } // Style text, not code?
 
 const MaximaTokenizer::TokenList &EditorCell::GetDisplayedTokens() {
@@ -3377,7 +3382,7 @@ const MaximaTokenizer::TokenList &EditorCell::GetAllTokens() {
     }
 }
 
-void EditorCell::StyleText() {
+void EditorCell::StyleText() const {
   // We will need to determine the width of text and therefore need to set
   // the font type and size.
   SetFont();
@@ -3446,7 +3451,6 @@ void EditorCell::SetValue(const wxString &text) {
 
   // Style the text.
   ScheduleRestyle();
-  ResetData();
 }
 
 bool EditorCell::CheckChanges() {
