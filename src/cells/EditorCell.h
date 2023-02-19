@@ -173,10 +173,10 @@ public:
     For cells containing text instead of code this function adds a <code>\\r</code> as a marker
     that this line is to be broken here until the window's width changes.
   */
-  void StyleText() const;
+  void StyleText();
   /*! Is Called by StyleText() if this is a code cell */
-  void StyleTextCode() const;
-  void StyleTextTexts() const;
+  void StyleTextCode();
+  void StyleTextTexts();
 
   void Reset();
 
@@ -299,7 +299,7 @@ public:
         m_firstLineOnly = show;
       }
       // Style the text anew.
-      ScheduleRestyle();
+      StyleText();
     }
 
   bool IsActive() const override;
@@ -472,9 +472,6 @@ public:
   //! Get the list of commands, parenthesis, strings and whitespaces including hidden ones
   const MaximaTokenizer::TokenList &GetAllTokens();
 
-  //! Mark this cell as "to be recalculated and to be restyled"
-  void ScheduleRestyle();
-  
 private:
   //! Did the zoom factor change since the last recalculation?
   bool IsZoomFactorChanged() const;
@@ -494,10 +491,8 @@ private:
   {
   private:
     /*! The text of this text portion
-
-      \todo: Can we get of this mutable flag?
      */
-    mutable wxString m_text;
+    wxString m_text;
     //! Chars that mark continued indentation
     wxString m_indentChar;
     //! The cached width of this piece of text
@@ -608,19 +603,17 @@ private:
   StringHash m_widths;
 
   //! A list of all potential autoComplete targets within this cell
-  mutable std::vector<wxString> m_wordList;
+  std::vector<wxString> m_wordList;
 
   //! The individual commands, parenthesis, strings and whitespaces a code cell consists of
-  mutable MaximaTokenizer::TokenList m_tokens;
+   MaximaTokenizer::TokenList m_tokens;
   //! The individual commands, parenthesis, strings and whitespaces including hidden lines
-  mutable MaximaTokenizer::TokenList m_tokens_including_hidden;
+  MaximaTokenizer::TokenList m_tokens_including_hidden;
 
   /*! The text this Editor contains
-
-    \todo Get rid of that "mutable" flag
    */
-  mutable wxString m_text;
-  mutable std::vector<StyledText> m_styledText;
+  wxString m_text;
+  std::vector<StyledText> m_styledText;
 
   std::vector<HistoryEntry> m_history;
 
@@ -671,9 +664,9 @@ private:
 
 
   //! Does the list of tokens including hidden items need to be recalculated?
-  mutable bool m_tokens_including_hidden_valid = false;
+  bool m_tokens_including_hidden_valid = false;
   //! Does the list of displayed tokens need to be recalculated?
-  mutable bool m_tokens_valid = false;
+  bool m_tokens_valid = false;
 
 
 //** Bitfield objects (2 bytes)
