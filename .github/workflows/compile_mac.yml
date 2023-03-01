@@ -79,6 +79,11 @@ jobs:
         run: |
              cd ../build-wxm
              cpack -G DragNDrop
+      - name: install
+        run: |
+             cmake --install ../build-wxm
+             ls -lh ../build-wxm/src
+             ls -lh ../build-wxm
 
   compile_Make:
     runs-on: macos-latest
@@ -107,10 +112,6 @@ jobs:
       - name: compile
         run: |
              cmake --build ../build-wxm
-      - name: install
-        run: |
-             cmake --install ../build-wxm
-             ls -lh ../build-wxm/src
 
   # compile_macports:
   #   runs-on: macos-latest
