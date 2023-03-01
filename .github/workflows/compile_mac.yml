@@ -79,6 +79,8 @@ jobs:
         run: |
              cd build-wxm
              cpack -G DragNDrop
+             cp build-wxm/src/*.dmg wxMaxima.dmg
+             cp build-wxm/src/*.sha256 wxMaxima.dmg.sha256
       - name: install
         run: |
              cmake --install build-wxm
@@ -88,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: wxMaxima_ia64.dmg
-          path: build-wxm/src/*.dmg
+          path: wxMaxima.dmg
           
   compile_Make:
     runs-on: macos-latest
