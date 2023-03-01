@@ -84,7 +84,12 @@ jobs:
              cmake --install ../build-wxm
              ls -lh ../build-wxm/src
              ls -lh ../build-wxm
-
+      - name: Upload the dmg
+        uses: actions/upload-artifact@v3
+        with:
+          name: wxMaxima_ia64.dmg
+          path: ../build-wxm/src/*.dmg
+          
   compile_Make:
     runs-on: macos-latest
 
