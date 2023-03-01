@@ -79,6 +79,7 @@ jobs:
         run: |
              cd build-wxm
              cpack -G DragNDrop
+             cd ..
              cp build-wxm/*.dmg wxMaxima.dmg
              cp build-wxm/*.sha512 wxMaxima.dmg.sha256
       - name: install
