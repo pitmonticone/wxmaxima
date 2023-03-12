@@ -1356,7 +1356,7 @@
 		   (if (cadr x)
 		       (list
 			(format nil "<lbl>(~A)~A </lbl>"
-				(wxxml-stripdollar (maybe-invert-string-case (symbol-name (cadr x))))
+				(stripdollar (maybe-invert-string-case (symbol-name (cadr x))))
 				*wxxml-mratp*))
 		     nil))
 	   r 'mparen 'mparen))
