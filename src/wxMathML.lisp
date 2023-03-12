@@ -373,7 +373,7 @@
   (defun wxxml-stripdollar (sym &aux pname)
     (or (symbolp sym)
 	(return-from wxxml-stripdollar
-		     (wxxml-fix-string (format nil "~a" sym))))
+		     (wxxml-fix-string (stripdollar sym))))
     (setq pname (maybe-invert-string-case (symbol-name sym)))
     (setq pname (cond ((and (> (length pname) 0)
 			    (member (elt pname 0) '(#\$ #\&) :test #'eq))
