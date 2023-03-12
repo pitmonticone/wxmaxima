@@ -555,7 +555,7 @@
     (wxxml (cadr x) l (append (wxxmlsym (caar x)) r) lop (caar x)))
 
   (defun wxxml-nofix (x l r) (wxxml (caar x) l r (caar x) rop))
-  
+
   (defun wxxml-matchfix (x l r)
     (setq l (append l (car (wxxmlsym (caar x))))
 	  ;; car of wxxmlsym of a matchfix operator is the lead op
@@ -2040,7 +2040,7 @@
   ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (defun symbol-to-xml (s)
-    (wxxml-fix-string (format nil "~a" (maybe-invert-string-case (symbol-name (wxxml-stripdollar s))))))
+    (wxxml-fix-string (format nil "~a" (maybe-invert-string-case (symbol-name (stripdollar s))))))
 
   (defun print_unit (unit)
     (format nil "<unit>~a</unit>" (symbol-to-xml unit)))
