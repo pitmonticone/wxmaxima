@@ -481,59 +481,52 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   // to recalculate the worksheet.
   RecalculateIfNeeded();
 
-  // Create a working drawing context that is valid for the time of this redraw
-#ifdef WORKING_AUTO_BUFFER
-  m_configuration->SetContext(dc);
-
-  // Create a graphics context that supports antialiasing, but on MSW
-  // only supports fonts that come in the Right Format.
-  wxGCDC antiAliassingDC(dc);
-#else
-  wxMemoryDC dcm;
-  // Test if m_memory is NULL or of the wrong size
-#ifdef __WXMAC__
-  if ((!m_memory.IsOk()) || (m_memory.GetSize() != sz))
-    m_memory =
-      wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH,
-	       wxWindow::GetContentScaleFactor());
-#else
-  if ((!m_memory.IsOk()) || (m_memory.GetSize() != sz))
-    m_memory =
-      wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH);
-#endif
-  if (!m_memory.IsOk()) {
-    m_configuration->SetContext(m_dc);
-    return;
-  }
-  dcm.SetUserScale(wxWindow::GetContentScaleFactor(),
-                   wxWindow::GetContentScaleFactor());
-  dcm.SelectObject(m_memory);
-  if (!dcm.IsOk()) {
-    m_configuration->SetContext(m_dc);
-    return;
-  }
-  DoPrepareDC(dcm);
-  m_configuration->SetContext(dcm);
-  // Create a graphics context that supports antialiasing, but on MSW
-  // only supports fonts that come in the Right Format.
-  wxGCDC antiAliassingDC(dcm);
-#endif
-
-  // Don't fill the text background with the background color
-  // No need to do the same for the antialiassing DC: We won't use that
-  // one for drawing text as on MS Windows it doesn't support all fonts
-  m_configuration->GetDC()->SetMapMode(wxMM_TEXT);
 
   // Now iterate over all single parts of the region we need to redraw and
   // redraw the worksheet
   wxRegionIterator region(GetUpdateRegion());
   while (region) {
     wxRect rect = region.GetRect();
-
+    // Create a working drawing context that is valid for the time of this redraw
+    wxMemoryDC dcm;
+    wxSize sz = rect.GetSize();
+    // Test if m_memory is NULL or of the wrong size
+#ifdef __WXMAC__
+    if ((!m_memory.IsOk()) || (m_memory.GetSize() != sz))
+      m_memory =
+	wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH,
+		 wxWindow::GetContentScaleFactor());
+#else
+    if ((!m_memory.IsOk()) || (m_memory.GetSize() != sz))
+      m_memory =
+	wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH);
+#endif
+    if (!m_memory.IsOk()) {
+      m_configuration->SetContext(m_dc);
+      return;
+    }
+    dcm.SetUserScale(wxWindow::GetContentScaleFactor(),
+		     wxWindow::GetContentScaleFactor());
+    dcm.SelectObject(m_memory);
+    if (!dcm.IsOk()) {
+      m_configuration->SetContext(m_dc);
+      return;
+    }
+    DoPrepareDC(dcm);
+    m_configuration->SetContext(dcm);
+    // Create a graphics context that supports antialiasing, but on MSW
+    // only supports fonts that come in the Right Format.
+    wxGCDC antiAliassingDC(dcm);
+    
+    // Don't fill the text background with the background color
+    // No need to do the same for the antialiassing DC: We won't use that
+    // one for drawing text as on MS Windows it doesn't support all fonts
+    m_configuration->GetDC()->SetMapMode(wxMM_TEXT);
+    
     // Don't draw rectangles with zero size or height
     if ((rect.GetWidth() < 1) || (rect.GetHeight() < 1))
       continue;
-
+    
     // Set line pen and fill brushes
     SetBackgroundColour(m_configuration->DefaultBackgroundColor());
     m_configuration->GetDC()->SetBackgroundMode(wxTRANSPARENT);
@@ -642,16 +635,16 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
           tmp.InEvaluationQueue(m_evaluationQueue.IsInQueue(&tmp));
           tmp.LastInEvaluationQueue(m_evaluationQueue.GetCell() == &tmp);
         }
-        tmp.Draw(point);
+	if(antiAliassingDC.IsOk())
+	  tmp.Draw(point, &dcm, &antiAliassingDC);
+	else
+	  tmp.Draw(point, &dcm, &dcm);
       }
     }
-#ifndef WORKING_AUTO_BUFFER
     // Blit the memory image to the window
     dcm.SetDeviceOrigin(0, 0);
     dc.Blit(0, rect.GetTop(), sz.x, rect.GetBottom() - rect.GetTop() + 1, &dcm,
             0, rect.GetTop());
-#endif
-
     //
     // Draw the horizontal caret
     //

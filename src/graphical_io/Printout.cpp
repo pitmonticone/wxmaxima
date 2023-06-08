@@ -120,7 +120,7 @@ bool Printout::OnPrintPage(int num) {
     // cells aren't printed" problem on linux.
     // No Idea why, though.
     dc->SetPen(wxPen(*wxBLACK, 1, wxPENSTYLE_SOLID));
-    group->Draw(group->GetGroup()->GetCurrentPoint());
+    group->Draw(group->GetGroup()->GetCurrentPoint(), dc, dc);
 
     if (end && (group == end->GetGroup()))
       break;
@@ -175,7 +175,7 @@ void Printout::BreakPages() {
       } else {
         // Drawing a cell assigns its output positions
         gr.Recalculate();
-        gr.Draw(gr.GetCurrentPoint());
+        gr.Draw(gr.GetCurrentPoint(), GetDC(), GetDC());
 
         if ((gr.GetOutput()) &&
             (gr.GetOutput()->GetRect(true).GetTop() - pageStart <

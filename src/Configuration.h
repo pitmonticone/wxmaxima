@@ -162,7 +162,6 @@ public:
     {
       m_dc = &dc;
       m_antialiassingDC = NULL;
-      ResetLastFontUsed();
     }
   void UnsetContext() {m_dc = NULL;}
 
@@ -175,7 +174,7 @@ public:
     {m_antialiassingDC = antialiassingDC;}
 
   void UnsetAntialiassingDC()
-    {m_antialiassingDC = NULL; ResetLastFontUsed();}
+    {m_antialiassingDC = NULL;}
 
   ~Configuration();
 
@@ -939,28 +938,6 @@ public:
   wxTextCtrl *LastActiveTextCtrl() const { return m_lastActiveTextCtrl; }
   void LastActiveTextCtrl(wxTextCtrl *last);
 
-  /*! Clear the memory which font this DC was last used with.
-
-    Used for avoiding setting a font if the Right Font already is in use.
-   */
-  void ResetLastFontUsed(){m_lastFontUsed = NULL;}
-  /*! A pointer to the last font we used on this DC. Needs not to be a valid wxFont!
-
-    Used for avoiding setting a font if the Right Font already is in use.
-   */
-  const wxFont *GetLastFontUsed() const {return m_lastFontUsed;}
-  /*! Set a pointer to the last font we used on this DC.
-
-    Used for avoiding setting a font if the Right Font already is in use.
-   */
-  void SetLastFontUsed(const wxFont *font){m_lastFontUsed = font;}
-  /*! Set a pointer to the last font we used on this DC.
-
-    Used for avoiding setting a font if the Right Font already is in use.
-   */
-  void SetLastFontUsed(std::shared_ptr <wxFont> font){m_lastFontUsed = font.get();}
-  const wxFont *m_lastFontUsed = NULL;
-
   //! Which styles affect how code is displayed?
   const std::vector<TextStyle> &GetCodeStylesList() const {return m_codeStyles;}
   //! Which styles affect how math output is displayed?
@@ -1179,7 +1156,6 @@ private:
   wxString m_wxMathML_Filename;
 
   wxTextCtrl *m_lastActiveTextCtrl = NULL;
-  wxFont *lastFontUsed = NULL;
 };
 
 //! Sets the configuration's "printing" flag until this class is left.

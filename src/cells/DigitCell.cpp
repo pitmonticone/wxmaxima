@@ -56,11 +56,10 @@ void DigitCell::Recalculate(AFontSize fontsize) {
   }
 }
 
-void DigitCell::Draw(wxPoint point) {
-  Cell::Draw(point);
+void DigitCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
+  Cell::Draw(point, dc, antialiassingDC);
   if (DrawThisCell(point)) {
-    wxDC *dc = m_configuration->GetDC();
-    SetForeground();
+    SetForeground(dc, antialiassingDC);
     SetFont(m_fontSize_Scaled);
     dc->DrawText(m_text, point.x, point.y - m_center + MC_TEXT_PADDING);
   }

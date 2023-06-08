@@ -286,8 +286,8 @@ void AnimationCell::Recalculate(AFontSize fontsize) {
   Cell::Recalculate(fontsize);
 }
 
-void AnimationCell::Draw(wxPoint point) {
-  Cell::Draw(point);
+void AnimationCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
+  Cell::Draw(point, dc, antialiassingDC);
   if (!IsOk())
     return;
   // If the animation leaves the screen the timer is stopped automatically.
@@ -311,7 +311,6 @@ void AnimationCell::Draw(wxPoint point) {
     if (!InUpdateRegion())
       return;
 
-    wxDC *dc = m_configuration->GetDC();
     wxMemoryDC bitmapDC;
 
     // Slide show cells have a red border except if they are selected

@@ -271,7 +271,7 @@ int Cell::GetLineWidth() const {
   To make this work each derived class must draw the content of the cell
   and then call MathCall::Draw(...).
 */
-void Cell::Draw(wxPoint point) {
+void Cell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
   if(m_configuration->GetDebugmode())
     {
       if(!m_isHidden)
@@ -360,9 +360,9 @@ void Cell::SetIsExponentList() {
   }
 }
 
-void Cell::DrawList(wxPoint point) {
+void Cell::DrawList(wxPoint point, wxDC *dc, wxDC *adc) {
   for (Cell &tmp : OnDrawList(this)) {
-    tmp.Draw(point);
+    tmp.Draw(point, dc, adc);
     point.x += tmp.m_width;
   }
 }
@@ -986,33 +986,31 @@ wxColour Cell::GetForegroundColor() const {
 // cppcheck-suppress functionStatic
 // cppcheck-suppress functionConst
 // Set the pen in device context according to the style of the cell.
-void Cell::SetPen(double lineWidth) const {
-  wxDC *dc = m_configuration->GetDC();
+void Cell::SetPen(wxDC *dc, wxDC *adc, double lineWidth) const {
 
   wxPen pen = *(wxThePenList->FindOrCreatePen(
-					      GetForegroundColor(), lineWidth * m_configuration->GetDefaultLineWidth(),
+					      GetForegroundColor(),
+					      lineWidth * m_configuration->GetDefaultLineWidth(),
 					      wxPENSTYLE_SOLID));
   dc->SetPen(pen);
 
-  if (m_configuration->GetAntialiassingDC() != dc)
-    m_configuration->GetAntialiassingDC()->SetPen(pen);
+  if (adc != dc)
+    adc->SetPen(pen);
 }
 
-void Cell::SetBrush() const {
-  wxDC *dc = m_configuration->GetDC();
-
+void Cell::SetBrush(wxDC *dc, wxDC *adc) const {
+  
   wxBrush brush = *(wxTheBrushList->FindOrCreateBrush(GetForegroundColor()));
   dc->SetBrush(brush);
 
-  if (m_configuration->GetAntialiassingDC() != dc)
-    m_configuration->GetAntialiassingDC()->SetBrush(brush);
+  if (adc != dc)
+    adc->SetBrush(brush);
 }
 
 const wxString &Cell::GetValue() const { return wxm::emptyString; }
 
-void Cell::SetForeground() {
+void Cell::SetForeground(wxDC *dc, wxDC *adc) {
   wxColour color;
-  wxDC *dc = m_configuration->GetDC();
   if (m_highlight) {
     color = m_configuration->GetColor(TS_HIGHLIGHT);
   } else {

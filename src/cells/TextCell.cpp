@@ -484,19 +484,18 @@ void TextCell::Recalculate(AFontSize fontsize) {
   }
 }
 
-void TextCell::Draw(wxPoint point) {
-  Cell::Draw(point);
+void TextCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
+  Cell::Draw(point, dc, antialiassingDC);
 
   if (DrawThisCell(point) &&
       !(IsHidden() ||
         (GetHidableMultSign() && m_configuration->HidemultiplicationSign()))) {
 
-    wxDC *dc = m_configuration->GetDC();
     int padding = 0;
     if (GetTextStyle() != TS_ASCIIMATHS)
       padding = MC_TEXT_PADDING;
 
-    SetForeground();
+    SetForeground(dc, antialiassingDC);
     SetFont(m_fontSize_Scaled);
     dc->DrawText(m_displayedText, point.x + padding,
                  point.y - m_center + MC_TEXT_PADDING);
@@ -512,11 +511,10 @@ void TextCell::SetFont(AFontSize fontsize) {
     }
   
   const wxFont &font = GetFont(fontsize);
-  if(m_configuration->GetLastFontUsed() != &font)
-    {
-      m_configuration->SetLastFontUsed(&font);
-      dc->SetFont(font);
-    }
+  if(!dc)
+    return;
+  if(!dc->GetFont().IsSameAs(font))
+    dc->SetFont(font);
 }
 
 bool TextCell::IsOperator() const {

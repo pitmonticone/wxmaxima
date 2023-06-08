@@ -180,7 +180,7 @@ void OutCommon::Draw(Cell *tree) {
   for (Cell &tmp : OnDrawList(tree)) {
     Cell *const next = tmp.GetNext();
     if (!tmp.IsBrokenIntoLines()) {
-      tmp.Draw(point);
+      tmp.Draw(point, m_recalculationDc, m_recalculationDc);
       if (next && next->BreakLineHere()) {
         point.x = 0;
         point.y += drop + next->GetCenterList();
