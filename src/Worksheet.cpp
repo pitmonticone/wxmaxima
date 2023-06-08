@@ -482,35 +482,37 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   RecalculateIfNeeded();
 
 
+  SetBackgroundColour(m_configuration->DefaultBackgroundColor());
+
   // Now iterate over all single parts of the region we need to redraw and
   // redraw the worksheet
   wxRegionIterator region(GetUpdateRegion());
   while (region) {
     wxRect rect = region.GetRect();
+    // Don't draw rectangles with zero size or height
+    if ((rect.GetWidth() < 1) || (rect.GetHeight() < 1))
+      continue;
+    wxSize sz = rect.GetSize();
+
     // Create a working drawing context that is valid for the time of this redraw
     wxMemoryDC dcm;
-    wxSize sz = rect.GetSize();
     // Test if m_memory is NULL or of the wrong size
 #ifdef __WXMAC__
     if ((!m_memory.IsOk()) || (m_memory.GetSize() != sz))
-      m_memory =
-	wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH,
-		 wxWindow::GetContentScaleFactor());
+      m_memory = wxBitmap(sz * wxWindow::GetContentScaleFactor(),
+			  wxBITMAP_SCREEN_DEPTH, wxWindow::GetContentScaleFactor());
 #else
     if ((!m_memory.IsOk()) || (m_memory.GetSize() != sz))
-      m_memory =
-	wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH);
+      m_memory = wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH);
 #endif
-    if (!m_memory.IsOk()) {
-      m_configuration->SetContext(m_dc);
-      return;
-    }
+
     dcm.SetUserScale(wxWindow::GetContentScaleFactor(),
 		     wxWindow::GetContentScaleFactor());
+
     dcm.SelectObject(m_memory);
     if (!dcm.IsOk()) {
       m_configuration->SetContext(m_dc);
-      return;
+      continue;
     }
     DoPrepareDC(dcm);
     m_configuration->SetContext(dcm);
@@ -522,13 +524,8 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
     // No need to do the same for the antialiassing DC: We won't use that
     // one for drawing text as on MS Windows it doesn't support all fonts
     dcm.SetMapMode(wxMM_TEXT);
-    
-    // Don't draw rectangles with zero size or height
-    if ((rect.GetWidth() < 1) || (rect.GetHeight() < 1))
-      continue;
-    
+        
     // Set line pen and fill brushes
-    SetBackgroundColour(m_configuration->DefaultBackgroundColor());
     dcm.SetBackgroundMode(wxTRANSPARENT);
     dcm.SetBackground(
 		       m_configuration->GetBackgroundBrush());
@@ -641,10 +638,6 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 	  tmp.Draw(point, &dcm, &dcm);
       }
     }
-    // Blit the memory image to the window
-    dcm.SetDeviceOrigin(0, 0);
-    dc.Blit(0, rect.GetTop(), sz.x, rect.GetBottom() - rect.GetTop() + 1, &dcm,
-            0, rect.GetTop());
     //
     // Draw the horizontal caret
     //
@@ -668,15 +661,16 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
         (m_hCaretPosition == NULL)) {
       if (!m_hCaretBlinkVisible) {
         dcm.SetBrush(
-					   m_configuration->GetBackgroundBrush());
+		     m_configuration->GetBackgroundBrush());
         dcm.SetPen(*wxThePenList->FindOrCreatePen(
-									GetBackgroundColour(), m_configuration->Scale_Px(1)));
+						  GetBackgroundColour(), m_configuration->Scale_Px(1)));
       } else {
         dcm.SetPen(*(wxThePenList->FindOrCreatePen(
-									 m_configuration->GetColor(TS_CURSOR), m_configuration->Scale_Px(1),
-									 wxPENSTYLE_SOLID)));
-        dcm.SetBrush(*(wxTheBrushList->FindOrCreateBrush(
-									       m_configuration->GetColor(TS_CURSOR), wxBRUSHSTYLE_SOLID)));
+						   m_configuration->GetColor(TS_CURSOR),
+						   m_configuration->Scale_Px(1),
+						   wxPENSTYLE_SOLID)));
+        dcm.SetBrush(*(wxTheBrushList->FindOrCreateBrush(m_configuration->GetColor(TS_CURSOR),
+							 wxBRUSHSTYLE_SOLID)));
       }
 
       wxRect cursor =
@@ -687,6 +681,11 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 	       MC_HCARET_WIDTH, m_configuration->GetCursorWidth());
       dcm.DrawRectangle(cursor);
     }
+
+    // Blit the memory image to the window
+    dcm.SetDeviceOrigin(0, 0);
+    dc.Blit(0, rect.GetTop(), sz.x, rect.GetBottom() - rect.GetTop() + 1, &dcm,
+            0, rect.GetTop());
 
     if (GetTree() == NULL) {
       m_configuration->SetContext(m_dc);
