@@ -457,14 +457,7 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   m_configuration->ClearAndEnableRedrawTracing();
   m_configuration->SetBackgroundBrush(*(wxTheBrushList->FindOrCreateBrush(
 									  m_configuration->DefaultBackgroundColor(), wxBRUSHSTYLE_SOLID)));
-  wxAutoBufferedPaintDC dc(this);
-  if (!dc.IsOk())
-    return;
-
-  // Some drawing contents
-#ifndef DC_ALREADY_SCROLLED
-  PrepareDC(dc);
-#endif
+  wxPaintDC paintDc(this);
 
 #if wxUSE_ACCESSIBILITY
   if (m_accessibilityInfo != NULL)
@@ -479,9 +472,6 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   // to recalculate the worksheet.
   RecalculateIfNeeded();
 
-  // Create a working drawing context that is valid for the time of this redraw
-  m_configuration->SetContext(dc);
-
   SetBackgroundColour(m_configuration->DefaultBackgroundColor());
 
   // Now iterate over all single parts of the region we need to redraw and
@@ -489,45 +479,64 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   wxRegionIterator region(GetUpdateRegion());
   while (region) {
     wxRect rect = region.GetRect();
+    wxCoord width;
+    wxCoord height;
+    GetClientSize(&width, &height);
+    wxSize sz(width, height);
+
+    wxMemoryDC dc;
+    m_configuration->SetContext(dc);
+    // Test if m_memory is NULL or of the wrong size
+#ifdef __WXMAC__
+    if ((!m_memory.IsOk()) || (m_memory.GetSize() != sz))
+      m_memory =
+	wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH,
+		 wxWindow::GetContentScaleFactor());
+#else
+    if ((!m_memory.IsOk()) || (m_memory.GetSize() != sz))
+      m_memory =
+	wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH);
+#endif
+    dc.SetUserScale(wxWindow::GetContentScaleFactor(),
+		    wxWindow::GetContentScaleFactor());
+    dc.SelectObject(m_memory);
+    PrepareDC(dc);
+    m_configuration->SetContext(dc);
     // Don't draw rectangles with zero size or height
     if ((rect.GetWidth() < 1) || (rect.GetHeight() < 1))
       continue;
-    wxSize sz = rect.GetSize();
-
-    // Create a drawing context that is valid for the time of this redraw
-  m_configuration->SetContext(dc);
-
-  // Create a graphics context that supports antialiasing, but on MSW
-  // only supports fonts that come in the Right Format.
-  wxGCDC antiAliassingDC(dc);
-  
-  dc.SetUserScale(wxWindow::GetContentScaleFactor(),
-		  wxWindow::GetContentScaleFactor());
-  
-  m_configuration->SetContext(dc);
-  
-  // Don't fill the text background with the background color
-  // No need to do the same for the antialiassing DC: We won't use that
-  // one for drawing text as on MS Windows it doesn't support all fonts
-  dc.SetMapMode(wxMM_TEXT);
-  
-  // Set line pen and fill brushes
-  dc.SetBackgroundMode(wxTRANSPARENT);
-  dc.SetBackground(
-		   m_configuration->GetBackgroundBrush());
-  dc.SetBrush(m_configuration->GetBackgroundBrush());
-  dc.SetPen(*wxWHITE_PEN);
-  dc.SetLogicalFunction(wxCOPY);
-  
-  if (antiAliassingDC.IsOk()) {
-    antiAliassingDC.SetMapMode(wxMM_TEXT);
-    antiAliassingDC.SetBackgroundMode(wxTRANSPARENT);
-    antiAliassingDC.SetBrush(m_configuration->GetBackgroundBrush());
-    antiAliassingDC.SetPen(*wxWHITE_PEN);
-    antiAliassingDC.SetLogicalFunction(wxCOPY);
-    m_configuration->SetAntialiassingDC(&antiAliassingDC);
-  }
-  
+    
+    // Create a graphics context that supports antialiasing, but on MSW
+    // only supports fonts that come in the Right Format.
+    wxGCDC antiAliassingDC(dc);
+    
+    dc.SetUserScale(wxWindow::GetContentScaleFactor(),
+		    wxWindow::GetContentScaleFactor());
+    
+    m_configuration->SetContext(dc);
+    
+    // Don't fill the text background with the background color
+    // No need to do the same for the antialiassing DC: We won't use that
+    // one for drawing text as on MS Windows it doesn't support all fonts
+    dc.SetMapMode(wxMM_TEXT);
+    
+    // Set line pen and fill brushes
+    dc.SetBackgroundMode(wxTRANSPARENT);
+    dc.SetBackground(
+		     m_configuration->GetBackgroundBrush());
+    dc.SetBrush(m_configuration->GetBackgroundBrush());
+    dc.SetPen(*wxWHITE_PEN);
+    dc.SetLogicalFunction(wxCOPY);
+    
+    if (antiAliassingDC.IsOk()) {
+      antiAliassingDC.SetMapMode(wxMM_TEXT);
+      antiAliassingDC.SetBackgroundMode(wxTRANSPARENT);
+      antiAliassingDC.SetBrush(m_configuration->GetBackgroundBrush());
+      antiAliassingDC.SetPen(*wxWHITE_PEN);
+      antiAliassingDC.SetLogicalFunction(wxCOPY);
+      m_configuration->SetAntialiassingDC(&antiAliassingDC);
+    }
+    
     // Tell the configuration where to crop in this region
     int xstart, xend, top, bottom;
     CalcUnscrolledPosition(rect.GetLeft(), rect.GetTop(), &xstart, &top);
@@ -670,8 +679,11 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 
     if (GetTree() == NULL) {
       m_configuration->SetContext(m_dc);
-      return;
     }
+    // Blit the memory image to the window
+    paintDc.Blit(rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight(), &dc,
+		 rect.GetLeft(), rect.GetTop());
+
     m_lastTop = top;
     m_lastBottom = bottom;
     region++;
