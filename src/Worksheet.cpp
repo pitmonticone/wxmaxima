@@ -738,6 +738,7 @@ GroupCell *Worksheet::InsertGroupCells(std::unique_ptr<GroupCell> &&cells,
     CellList::SpliceInAfter(lastOfCellsToInsert, std::move(m_tree));
     m_tree = std::move(cells);
   } else {
+    auto *whereNext = where->GetNext();
     CellList::SpliceInAfter(where, std::move(cells), lastOfCellsToInsert);
     // make sure m_last still points to the last cell of the worksheet!!
   }
