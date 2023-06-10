@@ -453,6 +453,21 @@ Worksheet::~Worksheet() {
 #endif
 #endif
 
+void Worksheet::ConfigurePaintDC(wxDC &dc)
+{
+  // Don't fill the text background with the background color
+  // No need to do the same for the antialiassing DC: We won't use that
+  // one for drawing text as on MS Windows it doesn't support all fonts
+  dc.SetMapMode(wxMM_TEXT);
+  
+  // Set line pen and fill brushes
+  dc.SetBackgroundMode(wxTRANSPARENT);
+  dc.SetBackground(m_configuration->GetBackgroundBrush());
+  dc.SetBrush(m_configuration->GetBackgroundBrush());
+  dc.SetPen(*wxWHITE_PEN);
+  dc.SetLogicalFunction(wxCOPY);  
+}
+
 void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   m_configuration->ClearAndEnableRedrawTracing();
   m_configuration->SetBackgroundBrush(*(wxTheBrushList->FindOrCreateBrush(
@@ -479,14 +494,16 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   wxRegionIterator region(GetUpdateRegion());
   while (region) {
     wxRect rect = region.GetRect();
+    // Don't draw rectangles with zero size or height
+    if ((rect.GetWidth() < 1) || (rect.GetHeight() < 1))
+      continue;
     wxCoord width;
     wxCoord height;
     GetClientSize(&width, &height);
     wxSize sz(width, height);
 
-    wxMemoryDC dc;
-    m_configuration->SetContext(dc);
-    // Test if m_memory is NULL or of the wrong size
+    // Make sure that we have a bitmap that is as big as the visible portion of the
+    // screen we can paint into
 #ifdef __WXMAC__
     if ((!m_memory.IsOk()) || (m_memory.GetSize() != sz))
       m_memory =
@@ -497,45 +514,25 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
       m_memory =
 	wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH);
 #endif
+    
+    // A drawing context for drawing text and non-antialiassed lines
+    wxMemoryDC dc;
     dc.SetUserScale(wxWindow::GetContentScaleFactor(),
 		    wxWindow::GetContentScaleFactor());
     dc.SelectObject(m_memory);
     PrepareDC(dc);
+    dc.SetUserScale(wxWindow::GetContentScaleFactor(),
+		    wxWindow::GetContentScaleFactor());
+    ConfigurePaintDC(dc);
     m_configuration->SetContext(dc);
-    // Don't draw rectangles with zero size or height
-    if ((rect.GetWidth() < 1) || (rect.GetHeight() < 1))
-      continue;
     
     // Create a graphics context that supports antialiasing, but on MSW
     // only supports fonts that come in the Right Format.
-    wxGCDC antiAliassingDC(dc);
+    wxGCDC antiAliassingDC(dc);    
+    ConfigurePaintDC(antiAliassingDC);
     
-    dc.SetUserScale(wxWindow::GetContentScaleFactor(),
-		    wxWindow::GetContentScaleFactor());
-    
-    m_configuration->SetContext(dc);
-    
-    // Don't fill the text background with the background color
-    // No need to do the same for the antialiassing DC: We won't use that
-    // one for drawing text as on MS Windows it doesn't support all fonts
-    dc.SetMapMode(wxMM_TEXT);
-    
-    // Set line pen and fill brushes
-    dc.SetBackgroundMode(wxTRANSPARENT);
-    dc.SetBackground(
-		     m_configuration->GetBackgroundBrush());
-    dc.SetBrush(m_configuration->GetBackgroundBrush());
-    dc.SetPen(*wxWHITE_PEN);
-    dc.SetLogicalFunction(wxCOPY);
-    
-    if (antiAliassingDC.IsOk()) {
-      antiAliassingDC.SetMapMode(wxMM_TEXT);
-      antiAliassingDC.SetBackgroundMode(wxTRANSPARENT);
-      antiAliassingDC.SetBrush(m_configuration->GetBackgroundBrush());
-      antiAliassingDC.SetPen(*wxWHITE_PEN);
-      antiAliassingDC.SetLogicalFunction(wxCOPY);
-      m_configuration->SetAntialiassingDC(&antiAliassingDC);
-    }
+    m_configuration->SetAntialiassingDC(&antiAliassingDC);
+    m_configuration->SetContext(dc);  
     
     // Tell the configuration where to crop in this region
     int xstart, xend, top, bottom;

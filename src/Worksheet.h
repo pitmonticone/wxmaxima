@@ -60,6 +60,8 @@
 #include "TableOfContents.h"
 #include "UnicodeSidebar.h"
 #include "ToolBar.h"
+#include <thread>
+#include <vector>
 
 /*! The canvas that contains the spreadsheet the whole program is about.
 
@@ -97,6 +99,8 @@ public:
   bool UpdateControlsNeeded(){bool result = m_updateControls; m_updateControls = false; return result;}
   void UpdateControlsNeeded(bool updateControlsNeeded){m_updateControls = updateControlsNeeded;}
 private:
+  void ConfigurePaintDC(wxDC &dc);
+  std::vector<std::thread> m_drawThreads;
   wxString m_maximaVersion;
   //! The directory with maxima's documentation
   wxString m_maximaDocDir;
