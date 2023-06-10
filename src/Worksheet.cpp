@@ -630,6 +630,11 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 	  tmp.Draw(point, &dc, &dc);
       }
     }
+
+    for(auto &i:m_drawThreads) {
+      if(i.joinable())
+	i.join();
+      }
     //
     // Draw the horizontal caret
     //
@@ -733,7 +738,6 @@ GroupCell *Worksheet::InsertGroupCells(std::unique_ptr<GroupCell> &&cells,
     CellList::SpliceInAfter(lastOfCellsToInsert, std::move(m_tree));
     m_tree = std::move(cells);
   } else {
-    auto *whereNext = where->GetNext();
     CellList::SpliceInAfter(where, std::move(cells), lastOfCellsToInsert);
     // make sure m_last still points to the last cell of the worksheet!!
   }
