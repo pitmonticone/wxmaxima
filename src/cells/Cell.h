@@ -794,8 +794,8 @@ public:
   virtual void SetFocus(bool WXUNUSED(focus))
     {}
 
-  //! Sets the foreground color
-  void SetForeground(wxDC *dc);
+  //! Sets the text color
+  void SetTextColor(wxDC *dc);
 
   //! Is this editor cell focused?
   virtual bool IsActive() const

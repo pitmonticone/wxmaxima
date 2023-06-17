@@ -728,15 +728,13 @@ void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
       wxBrush *br;
       wxPen *pen;
       if (GetTextStyle() == TS_TEXT) {
-        br = wxTheBrushList->FindOrCreateBrush(
-					       m_configuration->EditorBackgroundColor());
-        pen = wxThePenList->FindOrCreatePen(
-					    m_configuration->EditorBackgroundColor(), 0, wxPENSTYLE_SOLID);
+        br = wxTheBrushList->FindOrCreateBrush(m_configuration->EditorBackgroundColor());
+        pen = wxThePenList->FindOrCreatePen(m_configuration->EditorBackgroundColor(),
+					    0, wxPENSTYLE_SOLID);
       } else {
-        br = wxTheBrushList->FindOrCreateBrush(
-					       m_configuration->DefaultBackgroundColor());
-        pen = wxThePenList->FindOrCreatePen(
-					    m_configuration->DefaultBackgroundColor(), 0, wxPENSTYLE_SOLID);
+        br = wxTheBrushList->FindOrCreateBrush(m_configuration->DefaultBackgroundColor());
+        pen = wxThePenList->FindOrCreatePen(m_configuration->DefaultBackgroundColor(),
+					    0, wxPENSTYLE_SOLID);
       }
       dc->SetBrush(*br);
       dc->SetPen(*pen);
@@ -746,7 +744,6 @@ void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
           (br->GetColour() != m_configuration->DefaultBackgroundColor()))
         dc->DrawRectangle(CropToUpdateRegion(rect));
     }
-    dc->SetPen(*wxBLACK_PEN);
     SetFont(dc);
 
     m_selectionChanged = false;
@@ -818,7 +815,6 @@ void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     //
     // Draw the text
     //
-    //SetPen(dc);
 
     wxPoint TextStartingpoint = point;
     wxPoint TextCurrentPoint = TextStartingpoint;
@@ -844,13 +840,11 @@ void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
         // Grab a pen of the right color.
         if (textSnippet.IsStyleSet()) {
           if (lastStyle != textSnippet.GetTextStyle()) {
-            dc->SetTextForeground(
-				  m_configuration->GetColor(textSnippet.GetTextStyle()));
+            dc->SetTextForeground(m_configuration->GetColor(textSnippet.GetTextStyle()));
             lastStyle = textSnippet.GetTextStyle();
           }
         } else {
           lastStyle = -1;
-          SetForeground();
         }
 
         // Draw a char that shows we continue an indentation - if this is
@@ -944,11 +938,6 @@ wxSize EditorCell::GetTextSize(wxString const &text) {
   wxSize sz = dc->GetTextExtent(text);
   m_widths[text] = sz;
   return sz;
-}
-
-void EditorCell::SetForeground() {
-  wxDC *dc = m_configuration->GetRecalcDC();
-  dc->SetTextForeground(m_configuration->GetColor(GetTextStyle()));
 }
 
 wxString EditorCell::GetCurrentCommand() {

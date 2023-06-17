@@ -1001,7 +1001,7 @@ void Cell::SetBrush(wxDC *dc) const {
 
 const wxString &Cell::GetValue() const { return wxm::emptyString; }
 
-void Cell::SetForeground(wxDC *dc) {
+void Cell::SetTextColor(wxDC *dc) {
   wxColour color;
   if (m_highlight) {
     color = m_configuration->GetColor(TS_HIGHLIGHT);
@@ -1027,7 +1027,6 @@ void Cell::SetForeground(wxDC *dc) {
       break;
     }
   }
-
   dc->SetTextForeground(color);
 }
 

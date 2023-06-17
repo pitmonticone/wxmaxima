@@ -152,9 +152,6 @@ public:
   //! Set the currently used font to the one that matches this cell's formatting
   void SetFont(wxDC *dc);
 
-  //! Sets the current color to this cell's foreground color
-  void SetForeground();
-
   /*! Sets the text that is to be displayed.
     
     Automatically calls StyleText().

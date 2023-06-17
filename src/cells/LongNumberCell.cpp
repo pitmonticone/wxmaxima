@@ -130,7 +130,7 @@ void LongNumberCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
       Cell::Draw(point, dc, antialiassingDC);
       if (IsBrokenIntoLines())
         return;
-      SetForeground(dc);
+      SetTextColor(dc);
       SetFont(dc, m_fontSize_Scaled);
       dc->DrawText(m_numStart, point.x + MC_TEXT_PADDING,
                    point.y - m_center + MC_TEXT_PADDING);

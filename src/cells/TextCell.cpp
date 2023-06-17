@@ -495,8 +495,8 @@ void TextCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     if (GetTextStyle() != TS_ASCIIMATHS)
       padding = MC_TEXT_PADDING;
 
-    SetForeground(dc);
     SetFont(dc, m_fontSize_Scaled);
+    SetTextColor(dc);
     dc->DrawText(m_displayedText, point.x + padding,
                  point.y - m_center + MC_TEXT_PADDING);
   }
