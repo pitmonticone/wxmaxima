@@ -41,7 +41,7 @@ BitmapOut::BitmapOut(Configuration **configuration, double scale)
   m_cmn.SetRecalculationContext(m_dc);
 
   auto &config = m_cmn.GetConfiguration();
-  config.SetContext(m_dc);
+  config.SetRecalcContext(m_dc);
   config.SetClientWidth(BM_FULL_WIDTH);
   config.SetClientHeight(BM_FULL_WIDTH);
 }
@@ -111,7 +111,7 @@ void BitmapOut::Draw() {
 wxSize BitmapOut::ToFile(const wxString &file) {
   // Assign a resolution to the bitmap.
   wxImage img = m_bmp.ConvertToImage();
-  int resolution = m_cmn.GetScreenConfig().GetDC()->GetPPI().x;
+  int resolution = m_cmn.GetScreenConfig().GetRecalcDC()->GetPPI().x;
   img.SetOption(wxIMAGE_OPTION_RESOLUTION, resolution * m_cmn.GetScale());
 
   bool success = false;

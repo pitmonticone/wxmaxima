@@ -560,13 +560,12 @@ void EditorCell::Recalculate(AFontSize fontsize) {
     m_lastZoomFactor = m_configuration->GetZoomFactor();
   }
   StyleText();
-  wxDC *dc = m_configuration->GetDC();
-  SetFont();
+  SetFont(m_configuration->GetRecalcDC());
 
   // Measure the text height using characters that might extend below or above
   // the region ordinary characters move in.
   int charWidth;
-  dc->GetTextExtent(wxS("äXÄgy"), &charWidth, &m_charHeight);
+  m_configuration->GetRecalcDC()->GetTextExtent(wxS("äXÄgy"), &charWidth, &m_charHeight);
 
   // We want a little bit of vertical space between two text lines (and between
   // two labels).
@@ -581,7 +580,7 @@ void EditorCell::Recalculate(AFontSize fontsize) {
       m_numberOfLines++;
       linewidth = textSnippet.GetIndentPixels();
     } else {
-      dc->GetTextExtent(textSnippet.GetText(), &tokenwidth, &tokenheight);
+      m_configuration->GetRecalcDC()->GetTextExtent(textSnippet.GetText(), &tokenwidth, &tokenheight);
       textSnippet.SetWidth(tokenwidth);
       linewidth += tokenwidth;
       width = wxMax(width, linewidth);
@@ -661,20 +660,20 @@ wxString EditorCell::ToHTML() const {
   return retval;
 }
 
-void EditorCell::MarkSelection(long start, long end, TextStyle style) {
+void EditorCell::MarkSelection(wxDC *dc, long start, long end, TextStyle style) {
   if ((start < 0) || (end < 0))
     return;
   wxPoint point, point1;
   long pos1 = start, pos2 = start;
 
 #if defined(__WXOSX__)
-  m_configuration->GetDC()->SetPen(wxNullPen); // no border on rectangles
+  dc->SetPen(wxNullPen); // no border on rectangles
 #else
-  m_configuration->GetDC()->SetPen(*(wxThePenList->FindOrCreatePen(
+  dc->SetPen(*(wxThePenList->FindOrCreatePen(
 								   m_configuration->GetColor(style), 1, wxPENSTYLE_SOLID)));
   // window linux, set a pen
 #endif
-  m_configuration->GetDC()->SetBrush(*(wxTheBrushList->FindOrCreateBrush(
+  dc->SetBrush(*(wxTheBrushList->FindOrCreateBrush(
 									 m_configuration->GetColor(style)))); // highlight c.
 
   while (pos1 <
@@ -699,7 +698,7 @@ void EditorCell::MarkSelection(long start, long end, TextStyle style) {
 		    m_charHeight);
       // draw the rectangle if it is in the region that is to be updated.
       if (m_configuration->InUpdateRegion(rect))
-	m_configuration->GetDC()->DrawRectangle(CropToUpdateRegion(rect));
+	dc->DrawRectangle(CropToUpdateRegion(rect));
       pos1++;
       pos2 = pos1;
     }
@@ -717,14 +716,12 @@ void EditorCell::MarkSelection(long start, long end, TextStyle style) {
    StyleText() converts m_text into. This way the decisions needed for styling
    text are cached for later use.
 */
-void EditorCell::Draw(wxPoint point) {
-  Cell::Draw(point);
+void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
+  Cell::Draw(point, dc, antialiassingDC);
 
   if (!IsHidden() && (DrawThisCell())) {
     wxRect rect = GetRect();
     int y = rect.GetY();
-
-    wxDC *dc = m_configuration->GetDC();
 
     // Set the background to the cell's background color
     if (m_height > 0 && m_width > 0 && y >= 0) {
@@ -750,7 +747,7 @@ void EditorCell::Draw(wxPoint point) {
         dc->DrawRectangle(CropToUpdateRegion(rect));
     }
     dc->SetPen(*wxBLACK_PEN);
-    SetFont();
+    SetFont(dc);
 
     m_selectionChanged = false;
 
@@ -769,7 +766,7 @@ void EditorCell::Draw(wxPoint point) {
         // This would not only be unnecessary but also could cause
         // selections to flicker in very long texts
         if ((!IsActive()) || (start != wxMin(m_selectionStart, m_selectionEnd)))
-          MarkSelection(start, end, TS_EQUALSSELECTION);
+          MarkSelection(dc, start, end, TS_EQUALSSELECTION);
         if (m_cellPointers->m_selectionString.Length() == 0)
           end++;
         start = end;
@@ -782,7 +779,7 @@ void EditorCell::Draw(wxPoint point) {
 	// Mark selection
 	//
 	if (m_selectionStart >= 0)
-	  MarkSelection(wxMin(m_selectionStart, m_selectionEnd),
+	  MarkSelection(dc, wxMin(m_selectionStart, m_selectionEnd),
 			wxMax(m_selectionStart, m_selectionEnd), TS_SELECTION);
 
 	//
@@ -821,7 +818,7 @@ void EditorCell::Draw(wxPoint point) {
     //
     // Draw the text
     //
-    SetPen();
+    SetPen(dc, antialiassingDC);
 
     wxPoint TextStartingpoint = point;
     wxPoint TextCurrentPoint = TextStartingpoint;
@@ -927,20 +924,16 @@ void EditorCell::SetStyle(TextStyle style) {
   Cell::SetStyle(style);
 }
 
-void EditorCell::SetFont() {
-  wxDC *dc = m_configuration->GetDC();
+void EditorCell::SetFont(wxDC *dc) {
   if(!dc)
     return;
   const wxFont &font = GetFont();
-  if(m_configuration->GetLastFontUsed() != &font)
-    {
-      m_configuration->SetLastFontUsed(&font);
-      dc->SetFont(font);
-    }
+  if(!dc->GetFont().IsSameAs(font))
+    dc->SetFont(font);
 }
 
 wxSize EditorCell::GetTextSize(wxString const &text) {
-  wxDC *dc = m_configuration->GetDC();
+  wxDC *dc = m_configuration->GetRecalcDC();
   StringHash::const_iterator it = m_widths.find(text);
 
   // If we already know this text piece's size we return the cached value
@@ -954,7 +947,7 @@ wxSize EditorCell::GetTextSize(wxString const &text) {
 }
 
 void EditorCell::SetForeground() {
-  wxDC *dc = m_configuration->GetDC();
+  wxDC *dc = m_configuration->GetRecalcDC();
   dc->SetTextForeground(m_configuration->GetColor(GetTextStyle()));
 }
 
@@ -2383,7 +2376,7 @@ int EditorCell::XYToPosition(int x, int y) {
 }
 
 wxPoint EditorCell::PositionToPoint(int pos) {
-  SetFont();
+  SetFont(m_configuration->GetRecalcDC());
 
   int x = m_currentPoint.x, y = m_currentPoint.y;
 
@@ -2408,7 +2401,7 @@ wxPoint EditorCell::PositionToPoint(int pos) {
 
 void EditorCell::SelectPointText(const wxPoint point) {
   wxString s;
-  SetFont();
+  SetFont(m_configuration->GetRecalcDC());
 
   ClearSelection();
   wxPoint posInCell(point);
@@ -2539,7 +2532,7 @@ bool EditorCell::IsPointInSelection(wxPoint point) {
 
   wxString s;
   wxString text = m_text;
-  SetFont();
+  SetFont(m_configuration->GetRecalcDC());
   // Determine the line the point would be in
   wxPoint posInCell(point);
   posInCell.x -= m_currentPoint.x - 2;
@@ -2865,7 +2858,7 @@ int EditorCell::GetLineWidth(unsigned int line, int pos) {
   if (i < line)
     return 0;
 
-  SetFont();
+  SetFont(m_configuration->GetRecalcDC());
   int width = 0;
   wxString text;
   int textWidth = 0;
@@ -2982,7 +2975,7 @@ void EditorCell::HandleSoftLineBreaks_Code(
       (text[charInCell + 1] == ' '))
     return;
 
-  SetFont();
+  SetFont(m_configuration->GetRecalcDC());
 
   int width;
   //  Does the line extend too much to the right to fit on the screen /
@@ -3013,7 +3006,7 @@ void EditorCell::StyleTextCode() {
   // therefore would not help at all.
   int indentationPixels = 0;
   wxString textToStyle = m_text;
-  SetFont();
+  SetFont(m_configuration->GetRecalcDC());
   wxString suppressedLinesInfo;
 
   // Handle folding of EditorCells
@@ -3105,7 +3098,7 @@ void EditorCell::StyleTextTexts() {
   // Insert new soft line breaks where we hit the right border of the worksheet,
   // if this has been requested in the config dialogue
   if (m_configuration->GetAutoWrap()) {
-    SetFont();
+    SetFont(m_configuration->GetRecalcDC());
     wxString line;
     unsigned int lastSpacePos = 0;
     wxString::const_iterator lastSpaceIt;
@@ -3362,8 +3355,8 @@ const MaximaTokenizer::TokenList &EditorCell::GetAllTokens() {
 }
 
 void EditorCell::StyleText() {
-  wxASSERT(m_configuration->GetDC() != NULL);
-  if(!m_configuration->GetDC())
+  wxASSERT(m_configuration->GetRecalcDC() != NULL);
+  if(!m_configuration->GetRecalcDC())
     {
       wxLogMessage(_("Bug: dc == NULL"));
       return;
@@ -3371,7 +3364,7 @@ void EditorCell::StyleText() {
   ResetSize();
   // We will need to determine the width of text and therefore need to set
   // the font type and size.
-  SetFont();
+  SetFont(m_configuration->GetRecalcDC());
 
   m_wordList.clear();
   m_styledText.clear();

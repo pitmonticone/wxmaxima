@@ -687,12 +687,12 @@ void GroupCell::UpdateOutputPositions() {
   }
 }
 
-void GroupCell::Draw(wxPoint const point) {
-  Cell::Draw(point);
+void GroupCell::Draw(wxPoint const point, wxDC *dc, wxDC *antialiassingDC) {
+  Cell::Draw(point, dc, antialiassingDC);
   if (NeedsRecalculation(m_configuration->GetDefaultFontSize()))
     wxLogMessage(_("One cell wasn't recalculated before displaying it."));
   if (m_configuration->ShowBrackets())
-    DrawBracket();
+    DrawBracket(dc, antialiassingDC);
 
   if (!DrawThisCell(point))
     return;
@@ -700,7 +700,6 @@ void GroupCell::Draw(wxPoint const point) {
   if (m_updateConfusableCharWarnings)
     UpdateConfusableCharWarnings();
 
-  wxDC *dc = m_configuration->GetDC();
   // draw a thick line for 'page break'
   // and return
   if (m_groupType == GC_TYPE_PAGEBREAK) {
@@ -721,7 +720,7 @@ void GroupCell::Draw(wxPoint const point) {
     //
     // Draw input and output
     //
-    SetPen();
+    SetPen(dc, antialiassingDC);
 
     if (m_output && !IsHidden()) {
       wxPoint in = point;
@@ -745,7 +744,7 @@ void GroupCell::Draw(wxPoint const point) {
 	      in.y += drop + tmp.GetCenterList();
 	      drop = tmp.GetMaxDrop();
 	    }
-	    tmp.Draw(in);
+	    tmp.Draw(in, dc, antialiassingDC);
 	    in.x += tmp.GetWidth();
 	    first = false;
 	  }
@@ -756,10 +755,10 @@ void GroupCell::Draw(wxPoint const point) {
       
       EditorCell *input = GetEditable();
       if (input)
-        input->Draw(CalculateInputPosition());
+        input->Draw(CalculateInputPosition(), dc, antialiassingDC);
       
       if (GetPrompt())
-        GetPrompt()->Draw(point);
+        GetPrompt()->Draw(point, dc, antialiassingDC);
 
       if (m_groupType == GC_TYPE_CODE && input)
         m_configuration->Outdated(input->ContainsChanges());
@@ -798,7 +797,7 @@ void GroupCell::CellUnderPointer(GroupCell *cell) {
   m_cellPointers->m_groupCellUnderPointer = cell;
 }
 
-void GroupCell::DrawBracket() {
+void GroupCell::DrawBracket(wxDC *dc, wxDC *antialiassingDC) {
   // If the current cell doesn't know where it is on the screen we don't
   // attempt to draw it's bracket.
   if ((GetRect().GetLeft() < 0) || (GetRect().GetTop() < 0))
@@ -808,9 +807,6 @@ void GroupCell::DrawBracket() {
 
   if (this == m_cellPointers->m_groupCellUnderPointer)
     drawBracket = true;
-
-  wxDC *dc = m_configuration->GetDC();
-  wxDC *adc = m_configuration->GetAntialiassingDC();
 
   int selectionStart_px = -1;
   if (m_cellPointers->m_selectionStart &&
@@ -886,14 +882,14 @@ void GroupCell::DrawBracket() {
   Cell *editable = GetEditable();
   if (editable != NULL && editable->IsActive()) {
     drawBracket = true;
-    adc->SetPen(*(wxThePenList->FindOrCreatePen(
+    antialiassingDC->SetPen(*(wxThePenList->FindOrCreatePen(
 						m_configuration->GetColor(TS_ACTIVE_CELL_BRACKET),
 						2 * m_configuration->GetDefaultLineWidth(),
 						wxPENSTYLE_SOLID))); // window linux, set a pen
     dc->SetBrush(*(wxTheBrushList->FindOrCreateBrush(
 						     m_configuration->GetColor(TS_ACTIVE_CELL_BRACKET)))); // highlight c.
   } else {
-    adc->SetPen(*(wxThePenList->FindOrCreatePen(
+    antialiassingDC->SetPen(*(wxThePenList->FindOrCreatePen(
 						m_configuration->GetColor(TS_CELL_BRACKET),
 						m_configuration->GetDefaultLineWidth(),
 						wxPENSTYLE_SOLID))); // window linux, set a pen
@@ -906,8 +902,8 @@ void GroupCell::DrawBracket() {
   }
 
   if (drawBracket) {
-    adc->SetBrush(dc->GetBrush());
-    SetPen(1.5);
+    antialiassingDC->SetBrush(dc->GetBrush());
+    SetPen(dc, antialiassingDC, 1.5);
     int bracketWidth = m_configuration->GetCellBracketWidth() -
       m_configuration->GetDefaultLineWidth();
     int lineWidth = m_configuration->GetDefaultLineWidth();
@@ -918,7 +914,7 @@ void GroupCell::DrawBracket() {
                                  {-bracketWidth, bracketWidth},
                                  {-lineWidth, bracketWidth},
                                  {-lineWidth, 0}};
-      adc->DrawPolygon(4, points, m_currentPoint.x,
+      antialiassingDC->DrawPolygon(4, points, m_currentPoint.x,
                        m_currentPoint.y - m_center);
     } else {
       int n = 0;
@@ -946,7 +942,7 @@ void GroupCell::DrawBracket() {
       points[n++] = {-bracketWidth + lineWidth_2, m_height - lineWidth};
 
       wxASSERT(n <= (std::end(points) - std::begin(points)));
-      adc->DrawPolygon(n, points, m_currentPoint.x,
+      antialiassingDC->DrawPolygon(n, points, m_currentPoint.x,
                        m_currentPoint.y - m_center);
     }
   }

@@ -60,6 +60,8 @@
 #include "TableOfContents.h"
 #include "UnicodeSidebar.h"
 #include "ToolBar.h"
+#include <thread>
+#include <vector>
 
 /*! The canvas that contains the spreadsheet the whole program is about.
 
@@ -1616,8 +1618,5 @@ inline Worksheet *Cell::GetWorksheet() const
   wxASSERT(worksheet != NULL);
   return static_cast<Worksheet*>(worksheet);
 }
-
-inline void Configuration::SetWorkSheet(wxWindow *workSheet)
-{ m_workSheet = dynamic_cast<Worksheet*>(workSheet); }
 
 #endif // WORKSHEET_H

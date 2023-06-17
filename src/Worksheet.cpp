@@ -89,9 +89,8 @@ Worksheet::Worksheet(wxWindow *parent, int id,
 			 ),
   m_unsavedDocuments(wxS("unsaved")),
   m_cellPointers(this), m_dc(this), m_configuration(config),
-    m_autocomplete(config),
-    m_maximaManual(m_configuration) {
-  m_configuration->SetContext(m_dc);
+  m_autocomplete(config),
+  m_maximaManual(m_configuration) {
   m_scrollToCaret = false;
   m_newxPosition = -1;
   m_newyPosition = -1;
@@ -479,9 +478,6 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   // to recalculate the worksheet.
   RecalculateIfNeeded();
 
-  // Create a working drawing context that is valid for the time of this redraw
-  m_configuration->SetContext(dc);
-
   // Create a graphics context that supports antialiasing, but on MSW
   // only supports fonts that come in the Right Format.
   wxGCDC antiAliassingDC(dc);
@@ -513,13 +509,12 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
     dc.SetPen(*wxWHITE_PEN);
     dc.SetLogicalFunction(wxCOPY);
 
-	antiAliassingDC.SetMapMode(wxMM_TEXT);
-	antiAliassingDC.SetBackgroundMode(wxTRANSPARENT);
-	antiAliassingDC.SetBrush(m_configuration->GetBackgroundBrush());
-	antiAliassingDC.SetPen(*wxWHITE_PEN);
-        antiAliassingDC.SetLogicalFunction(wxCOPY);
-	m_configuration->SetAntialiassingDC(&antiAliassingDC);
-
+    antiAliassingDC.SetMapMode(wxMM_TEXT);
+    antiAliassingDC.SetBackgroundMode(wxTRANSPARENT);
+    antiAliassingDC.SetBrush(m_configuration->GetBackgroundBrush());
+    antiAliassingDC.SetPen(*wxWHITE_PEN);
+    antiAliassingDC.SetLogicalFunction(wxCOPY);
+    
     // Tell the configuration where to crop in this region
     int xstart, xend, top, bottom;
     CalcUnscrolledPosition(rect.GetLeft(), rect.GetTop(), &xstart, &top);
@@ -610,7 +605,7 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
           tmp.InEvaluationQueue(m_evaluationQueue.IsInQueue(&tmp));
           tmp.LastInEvaluationQueue(m_evaluationQueue.GetCell() == &tmp);
         }
-        tmp.Draw(point);
+        tmp.Draw(point, &dc, &antiAliassingDC);
       }
     }
 
@@ -661,8 +656,6 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
     m_lastBottom = bottom;
     region++;
   }
-  m_configuration->SetContext(m_dc);
-  m_configuration->UnsetAntialiassingDC();
 
   m_configuration->ReportMultipleRedraws();
 }

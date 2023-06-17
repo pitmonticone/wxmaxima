@@ -294,14 +294,14 @@ public:
     Example: The position of the denominator of a fraction can only be determined
     after the height of denominator and numerator are known.
   */
-  virtual void Draw(wxPoint point);
+  virtual void Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC);
 
   /*! Draw this list of cells
 
     \param point The x and y position this cell is drawn at
   */
-  void DrawList(wxPoint point);
-  void DrawList(){DrawList(m_currentPoint);}
+  void DrawList(wxPoint point, wxDC *dc, wxDC *adc);
+  void DrawList(wxDC *dc, wxDC *adc){DrawList(m_currentPoint, dc, adc);}
 
   /*! Draw a rectangle that marks this cell or this list of cells as selected
 
@@ -495,9 +495,9 @@ public:
   //! Sets the drawing pen to the cell's default foreground color 
   // cppcheck-suppress functionStatic
   // cppcheck-suppress functionConst
-  void SetPen(double lineWidth = 1.0) const;
+  void SetPen(wxDC *dc, wxDC *adc, double lineWidth = 1.0) const;
   //! Sets the fill brush to the cell's default foreground color 
-  void SetBrush() const;
+  void SetBrush(wxDC *dc, wxDC *adc) const;
   wxColour GetForegroundColor() const;
 
   //! Mark this cell as highlighted (e.G. being in a maxima box)
@@ -795,7 +795,7 @@ public:
     {}
 
   //! Sets the foreground color
-  void SetForeground();
+  void SetForeground(wxDC *dc, wxDC *adc);
 
   //! Is this editor cell focused?
   virtual bool IsActive() const
