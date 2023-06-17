@@ -82,7 +82,7 @@ void AbsCell::Recalculate(AFontSize fontsize) {
 void AbsCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
   Cell::Draw(point, dc, antialiassingDC);
   if (DrawThisCell(point)) {
-    SetPen(dc, antialiassingDC);
+    SetPen(dc);
     wxPoint in;
     in.x = point.x + Scale_Px(4) + m_configuration->GetDefaultLineWidth();
     in.y = point.y;

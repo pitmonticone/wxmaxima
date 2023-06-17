@@ -114,7 +114,7 @@ void ListCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     } else {
       innerCellPos.y +=
 	(m_innerCell->GetCenterList() - m_innerCell->GetHeightList() / 2);
-      SetPen(dc, antialiassingDC, 1.5);
+      SetPen(antialiassingDC, 1.5);
 
       int signWidth = m_signWidth - Scale_Px(2);
       innerCellPos.x = point.x + m_signWidth;

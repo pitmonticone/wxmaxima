@@ -100,8 +100,8 @@ void LongNumberCell::Recalculate(AFontSize fontsize) {
       else {
         Cell::Recalculate(fontsize);
         m_keepPercent_last = m_configuration->CheckKeepPercent();
-        SetFont(m_fontSize_Scaled);
         wxDC *dc = m_configuration->GetRecalcDC();
+        SetFont(dc, m_fontSize_Scaled);
         auto numStartSize = CalculateTextSize(dc, m_numStart, numberStart);
         auto ellipsisSize = CalculateTextSize(dc, m_ellipsis, ellipsis);
         auto numEndSize = CalculateTextSize(dc, m_numEnd, numberEnd);
@@ -130,8 +130,8 @@ void LongNumberCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
       Cell::Draw(point, dc, antialiassingDC);
       if (IsBrokenIntoLines())
         return;
-      SetForeground(dc, antialiassingDC);
-      SetFont(m_fontSize_Scaled);
+      SetForeground(dc);
+      SetFont(dc, m_fontSize_Scaled);
       dc->DrawText(m_numStart, point.x + MC_TEXT_PADDING,
                    point.y - m_center + MC_TEXT_PADDING);
       dc->DrawText(m_numEnd,

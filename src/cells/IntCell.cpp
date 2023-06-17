@@ -133,7 +133,7 @@ void IntCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
   if (DrawThisCell(point)) {
     wxPoint base(point), under(point), over(point), var(point), sign(point);
 
-    SetPen(dc, antialiassingDC, 1.5);
+    SetPen(antialiassingDC, 1.5);
     // top decoration
     int m_signWCenter = m_signWidth / 2;
     wxPoint points[7] = {

@@ -462,7 +462,7 @@ void TextCell::Recalculate(AFontSize fontsize) {
   if (NeedsRecalculation(fontsize)) {
     Cell::Recalculate(fontsize);
     m_keepPercent_last = m_configuration->CheckKeepPercent();
-    SetFont(m_fontSize_Scaled);
+    SetFont(m_configuration->GetRecalcDC(), m_fontSize_Scaled);
 
     wxSize sz =
       CalculateTextSize(m_configuration->GetRecalcDC(), m_displayedText, cellText);
@@ -495,15 +495,14 @@ void TextCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     if (GetTextStyle() != TS_ASCIIMATHS)
       padding = MC_TEXT_PADDING;
 
-    SetForeground(dc, antialiassingDC);
-    SetFont(m_fontSize_Scaled);
+    SetForeground(dc);
+    SetFont(dc, m_fontSize_Scaled);
     dc->DrawText(m_displayedText, point.x + padding,
                  point.y - m_center + MC_TEXT_PADDING);
   }
 }
 
-void TextCell::SetFont(AFontSize fontsize) {
-  wxDC *dc = m_configuration->GetRecalcDC();
+void TextCell::SetFont(wxDC *dc, AFontSize fontsize) {
   if(dc == NULL)
     {
       wxLogMessage(_("Bug: dc == NULL"));

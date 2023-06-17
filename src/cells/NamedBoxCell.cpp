@@ -96,7 +96,7 @@ void NamedBoxCell::Recalculate(AFontSize fontsize) {
 void NamedBoxCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
   Cell::Draw(point, dc, antialiassingDC);
   if (DrawThisCell(point)) {
-    SetPen(dc, antialiassingDC);
+    SetPen(dc);
     wxPoint in;
     in.x = point.x + Scale_Px(4) + ((m_width - Scale_Px(8)) - m_innerCellWidth) / 2;
     in.y = point.y;

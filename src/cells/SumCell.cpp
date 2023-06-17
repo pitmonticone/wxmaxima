@@ -167,7 +167,7 @@ void SumCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     over.y = point.y - m_signHeight / 2 - m_over->GetMaxDrop() - Scale_Px(2);
     m_over->DrawList(over, dc, antialiassingDC);
 
-    SetPen(dc, antialiassingDC, 1.5);
+    SetPen(antialiassingDC, 1.5);
     if (m_sumStyle == SM_SUM) {
       // DRAW SUM SIGN
       //  Upper part
@@ -181,19 +181,19 @@ void SumCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     } else {
       // DRAW PRODUCT SIGN
       // Vertical lines
-      dc->DrawLine(point.x + m_signWCenter + m_signWidth / 6,
-                   point.y + m_signHeight / 2,
-                   point.x + m_signWCenter + m_signWidth / 6,
-                   point.y - m_signHeight / 2);
-      dc->DrawLine(point.x + m_signWCenter - m_signWidth / 6,
-                   point.y + m_signHeight / 2,
-                   point.x + m_signWCenter - m_signWidth / 6,
-                   point.y - m_signHeight / 2);
+      antialiassingDC->DrawLine(point.x + m_signWCenter + m_signWidth / 6,
+				point.y + m_signHeight / 2,
+				point.x + m_signWCenter + m_signWidth / 6,
+				point.y - m_signHeight / 2);
+      antialiassingDC->DrawLine(point.x + m_signWCenter - m_signWidth / 6,
+				point.y + m_signHeight / 2,
+				point.x + m_signWCenter - m_signWidth / 6,
+				point.y - m_signHeight / 2);
       // Horizontal line
-      dc->DrawLine(point.x + m_signWCenter - m_signWidth / 2,
-                   point.y - m_signHeight / 2,
-                   point.x + m_signWCenter + m_signWidth / 2,
-                   point.y - m_signHeight / 2);
+      antialiassingDC->DrawLine(point.x + m_signWCenter - m_signWidth / 2,
+				point.y - m_signHeight / 2,
+				point.x + m_signWCenter + m_signWidth / 2,
+				point.y - m_signHeight / 2);
     }
     base.x += (2 * m_signWCenter + Scale_Px(4));
     DisplayedBase()->DrawList(base, dc, antialiassingDC);

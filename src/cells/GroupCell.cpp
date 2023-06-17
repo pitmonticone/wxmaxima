@@ -720,7 +720,7 @@ void GroupCell::Draw(wxPoint const point, wxDC *dc, wxDC *antialiassingDC) {
     //
     // Draw input and output
     //
-    SetPen(dc, antialiassingDC);
+    SetPen(antialiassingDC);
 
     if (m_output && !IsHidden()) {
       wxPoint in = point;
@@ -903,7 +903,7 @@ void GroupCell::DrawBracket(wxDC *dc, wxDC *antialiassingDC) {
 
   if (drawBracket) {
     antialiassingDC->SetBrush(dc->GetBrush());
-    SetPen(dc, antialiassingDC, 1.5);
+    SetPen(antialiassingDC, 1.5);
     int bracketWidth = m_configuration->GetCellBracketWidth() -
       m_configuration->GetDefaultLineWidth();
     int lineWidth = m_configuration->GetDefaultLineWidth();

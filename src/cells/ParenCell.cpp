@@ -178,8 +178,8 @@ void ParenCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
 	  innerCellPos.y +=
 	    (m_innerCell->GetCenterList() - m_innerCell->GetHeightList() / 2);
 	}
-      SetPen(dc, antialiassingDC, 1.0);
-      SetBrush(dc, antialiassingDC);
+      SetPen(antialiassingDC, 1.0);
+      SetBrush(antialiassingDC);
 
       int signWidth = m_signWidth - Scale_Px(2);
       innerCellPos.x = point.x + m_signWidth;

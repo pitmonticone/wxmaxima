@@ -495,9 +495,9 @@ public:
   //! Sets the drawing pen to the cell's default foreground color 
   // cppcheck-suppress functionStatic
   // cppcheck-suppress functionConst
-  void SetPen(wxDC *dc, wxDC *adc, double lineWidth = 1.0) const;
+  void SetPen(wxDC *dc, double lineWidth = 1.0) const;
   //! Sets the fill brush to the cell's default foreground color 
-  void SetBrush(wxDC *dc, wxDC *adc) const;
+  void SetBrush(wxDC *dc) const;
   wxColour GetForegroundColor() const;
 
   //! Mark this cell as highlighted (e.G. being in a maxima box)
@@ -795,7 +795,7 @@ public:
     {}
 
   //! Sets the foreground color
-  void SetForeground(wxDC *dc, wxDC *adc);
+  void SetForeground(wxDC *dc);
 
   //! Is this editor cell focused?
   virtual bool IsActive() const

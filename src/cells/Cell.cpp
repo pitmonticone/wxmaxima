@@ -986,30 +986,22 @@ wxColour Cell::GetForegroundColor() const {
 // cppcheck-suppress functionStatic
 // cppcheck-suppress functionConst
 // Set the pen in device context according to the style of the cell.
-void Cell::SetPen(wxDC *dc, wxDC *adc, double lineWidth) const {
-
+void Cell::SetPen(wxDC *dc, double lineWidth) const {
   wxPen pen = *(wxThePenList->FindOrCreatePen(
 					      GetForegroundColor(),
 					      lineWidth * m_configuration->GetDefaultLineWidth(),
 					      wxPENSTYLE_SOLID));
   dc->SetPen(pen);
-
-  if (adc != dc)
-    adc->SetPen(pen);
 }
 
-void Cell::SetBrush(wxDC *dc, wxDC *adc) const {
-  
+void Cell::SetBrush(wxDC *dc) const {  
   wxBrush brush = *(wxTheBrushList->FindOrCreateBrush(GetForegroundColor()));
   dc->SetBrush(brush);
-
-  if (adc != dc)
-    adc->SetBrush(brush);
 }
 
 const wxString &Cell::GetValue() const { return wxm::emptyString; }
 
-void Cell::SetForeground(wxDC *dc, wxDC *adc) {
+void Cell::SetForeground(wxDC *dc) {
   wxColour color;
   if (m_highlight) {
     color = m_configuration->GetColor(TS_HIGHLIGHT);

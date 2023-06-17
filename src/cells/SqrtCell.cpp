@@ -87,7 +87,7 @@ void SqrtCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
 
     {
       in.x += Scale_Px(11) + 1;
-      SetPen(dc, antialiassingDC, 1.2);
+      SetPen(antialiassingDC, 1.2);
 
       const wxPoint points[12] = {
 	{0, 0},

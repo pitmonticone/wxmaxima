@@ -99,7 +99,7 @@ void MatrCell::Recalculate(AFontSize const fontsize) {
 
 void MatrCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
   Cell::Draw(point, dc, antialiassingDC);
-  SetBrush(dc, antialiassingDC);
+  SetBrush(dc);
   if (DrawThisCell(point)) {
     wxPoint mp;
     mp.x = point.x + Scale_Px(5);
@@ -119,19 +119,19 @@ void MatrCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
       }
       mp.x += (m_widths[i] + Scale_Px(10));
     }
-    SetPen(dc, antialiassingDC, 1.5);
+    SetPen(antialiassingDC, 1.5);
     if (m_specialMatrix) {
       if (m_inferenceMatrix)
-        dc->DrawLine(point.x + Scale_Px(1), point.y - m_center + Scale_Px(2),
+        antialiassingDC->DrawLine(point.x + Scale_Px(1), point.y - m_center + Scale_Px(2),
                      point.x + Scale_Px(1), point.y + m_center - Scale_Px(2));
       else {
         if (m_rowNames)
-          dc->DrawLine(point.x + m_widths[0] + 2 * Scale_Px(5),
+          antialiassingDC->DrawLine(point.x + m_widths[0] + 2 * Scale_Px(5),
                        point.y - m_center + Scale_Px(2),
                        point.x + m_widths[0] + 2 * Scale_Px(5),
                        point.y + m_center - Scale_Px(2));
         if (m_colNames)
-          dc->DrawLine(
+          antialiassingDC->DrawLine(
 		       point.x + Scale_Px(1),
 		       point.y - m_center + m_dropCenters[0].Sum() + 2 * Scale_Px(5),
 		       point.x + Scale_Px(1) + m_width,
@@ -140,7 +140,7 @@ void MatrCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     } else {
       switch (m_parenType) {
       case paren_rounded: {
-        SetPen(dc, antialiassingDC, 1);
+        SetPen(dc, 1);
         int signWidth = Scale_Px(4);
         if (m_height <= signWidth / 3)
           signWidth = m_height / 3;
@@ -173,7 +173,7 @@ void MatrCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
         break;
       }
       case paren_angled: {
-        SetPen(dc, antialiassingDC, 1);
+        SetPen(dc, 1);
         int signWidth = Scale_Px(4);
         if (m_height <= signWidth / 3)
           signWidth = m_height / 3;
@@ -194,7 +194,7 @@ void MatrCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
         break;
       }
       case paren_straight: {
-        SetPen(dc, antialiassingDC, 1);
+        SetPen(dc, 1);
         int signWidth = Scale_Px(4);
         if (m_height <= signWidth / 3)
           signWidth = m_height / 3;
@@ -214,7 +214,7 @@ void MatrCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
         break;
       }
       case paren_brackets: {
-        SetPen(dc, antialiassingDC, 1.5);
+        SetPen(dc, 1.5);
         // left bracket
         const wxPoint pointsL[4] = {{Scale_Px(5), -m_center + Scale_Px(2)},
                                     {Scale_Px(1), -m_center + Scale_Px(2)},

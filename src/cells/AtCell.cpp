@@ -73,7 +73,7 @@ void AtCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     in.y = point.y + m_baseCell->GetMaxDrop() + +m_indexCell->GetCenterList() -
       Scale_Px(7);
     m_indexCell->DrawList(in, dc, antialiassingDC);
-    SetPen(dc, antialiassingDC);
+    SetPen(dc);
     dc->DrawLine(in.x - Scale_Px(2), bs.y - m_baseCell->GetCenterList(),
                  in.x - Scale_Px(2), in.y);
   }

@@ -818,7 +818,7 @@ void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     //
     // Draw the text
     //
-    SetPen(dc, antialiassingDC);
+    //SetPen(dc);
 
     wxPoint TextStartingpoint = point;
     wxPoint TextCurrentPoint = TextStartingpoint;

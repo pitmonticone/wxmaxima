@@ -59,8 +59,8 @@ void LabelCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     if (GetTextStyle() != TS_ASCIIMATHS)
       padding = MC_TEXT_PADDING;
 
-    SetForeground(dc, antialiassingDC);
-    SetFont(m_fontSize_Scaled);
+    SetForeground(dc);
+    SetFont(dc, m_fontSize_Scaled);
     dc->DrawText(m_displayedText, point.x + padding,
                  point.y - m_center + MC_TEXT_PADDING);
   }

@@ -180,7 +180,7 @@ void ImgCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
       dc->SetBrush(*(wxTheBrushList->FindOrCreateBrush(
 						       m_configuration->GetColor(TS_SELECTION))));
     else
-      SetPen(dc, antialiassingDC);
+      SetPen(dc);
 
     if (m_drawRectangle || m_drawBoundingBox)
       dc->DrawRectangle(wxRect(point.x, point.y - m_center, m_width, m_height));

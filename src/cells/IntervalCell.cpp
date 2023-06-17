@@ -140,7 +140,7 @@ void IntervalCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
       point.x += m_stop->GetFullWidth();
       m_closeBracket->DrawList(point, dc, antialiassingDC);
     } else {
-      SetPen(dc, antialiassingDC, 1.5);
+      SetPen(dc, 1.5);
 
       innerCellPos.x = point.x + m_signWidth;
 
