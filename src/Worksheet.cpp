@@ -544,69 +544,43 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 									     m_configuration->GetColor(TS_MATH))));
 
       bool atStart = true;
-      for (auto &tmp : OnList(GetTree())) {
+      for (auto &cell : OnList(GetTree())) {
 	if (!atStart) {
-          tmp.UpdateYPosition();
-          point = tmp.GetCurrentPoint();
+          cell.UpdateYPosition();
+          point = cell.GetCurrentPoint();
         }
         atStart = false;
 
-        wxRect cellRect = tmp.GetRect();
-
-        int width;
-        int height;
-        GetClientSize(&width, &height);
-
-        wxPoint upperLeftScreenCorner;
-        CalcScrolledPosition(0, 0, &upperLeftScreenCorner.x,
-                             &upperLeftScreenCorner.y);
+	wxRect cellRect = cell.GetRect();
+	
+	int width;
+	int height;
+	GetClientSize(&width, &height);
+	
+	wxPoint upperLeftScreenCorner;
+	CalcScrolledPosition(0, 0, &upperLeftScreenCorner.x,
+			     &upperLeftScreenCorner.y);
 	wxRect visibleRegion = wxRect(upperLeftScreenCorner,
 				      upperLeftScreenCorner + wxPoint(width, height));
-
-        m_configuration->SetVisibleRegion(visibleRegion);
-        m_configuration->SetWorksheetPosition(GetPosition());
-        // Clear the image cache of all cells above or below the viewport.
-        if (cellRect.GetTop() >= bottom || cellRect.GetBottom() <= top) {
-          // Only actually clear the image cache if there is a screen's height
-          // between us and the image's position: Else the chance is too high
-          // that we will very soon have to generated a scaled image again.
-          if ((cellRect.GetBottom() <= m_lastBottom - 2 * height) ||
-              (cellRect.GetTop() >= m_lastTop + 2 * height)) {
-            if (tmp.GetOutput())
-              tmp.GetOutput()->ClearCacheList();
-          }
-        }
-
-        tmp.SetCurrentPoint(point);
-        if (tmp.DrawThisCell(point)) {
-          tmp.InEvaluationQueue(m_evaluationQueue.IsInQueue(&tmp));
-          tmp.LastInEvaluationQueue(m_evaluationQueue.GetCell() == &tmp);
-	  
-	  //
-	  // Draw the selection marks for an eventual selection inside this cell
-	  //
-	  if (HasCellsSelected() &&
-	      (m_cellPointers.m_selectionStart->GetType() != MC_TYPE_GROUP) &&
-	      (&tmp == m_cellPointers.m_selectionStart->GetGroup())) {
-	    // Draw the marker that tells us which output cells are selected -
-	    // if output cells are selected, that is.
-	    for (Cell &cell : OnDrawList(m_cellPointers.m_selectionStart.get())) {
-	      if (!cell.IsBrokenIntoLines() && !cell.IsHidden() &&
-		  &cell != GetActiveCell())
-		{
-		  dc.SetPen(*(wxThePenList->FindOrCreatePen(m_configuration->GetColor(TS_SELECTION),
-							    1, wxPENSTYLE_SOLID)));
-		  dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(m_configuration->GetColor(TS_SELECTION))));
-		  cell.DrawBoundingBox(dc, false);
-		  dc.SetBrush(m_configuration->GetBackgroundBrush());
-		  dc.SetPen(*wxWHITE_PEN);
-		}
-	      if (&cell == m_cellPointers.m_selectionEnd)
-		break;
-	    }
+	
+	m_configuration->SetVisibleRegion(visibleRegion);
+	m_configuration->SetWorksheetPosition(GetPosition());
+	
+	cell.SetCurrentPoint(point);
+	
+	// Clear the image cache of all cells above or below the viewport.
+	if (cellRect.GetTop() >= bottom || cellRect.GetBottom() <= top) {
+	  // Only actually clear the image cache if there is a screen's height
+	  // between us and the image's position: Else the chance is too high
+	  // that we will very soon have to generated a scaled image again.
+	  if ((cellRect.GetBottom() <= m_lastBottom - 2 * height) ||
+	      (cellRect.GetTop() >= m_lastTop + 2 * height)) {
+	    if (cell.GetOutput())
+	      cell.GetOutput()->ClearCacheList();
 	  }
-	  tmp.Draw(point, &dc, &antiAliassingDC);
 	}
+	
+	DrawGroupCell(dc, antiAliassingDC, cell, point);
       }
     }
     
@@ -659,6 +633,39 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   }
 
   m_configuration->ReportMultipleRedraws();
+}
+
+void Worksheet::DrawGroupCell(wxDC &dc, wxDC &adc, GroupCell &cell, const wxPoint &point)
+{
+  if (cell.DrawThisCell(point)) {
+    cell.InEvaluationQueue(m_evaluationQueue.IsInQueue(&cell));
+    cell.LastInEvaluationQueue(m_evaluationQueue.GetCell() == &cell);
+    
+    //
+    // Draw the selection marks for an eventual selection inside this cell
+    //
+    if (HasCellsSelected() &&
+	(m_cellPointers.m_selectionStart->GetType() != MC_TYPE_GROUP) &&
+	(&cell == m_cellPointers.m_selectionStart->GetGroup())) {
+      // Draw the marker that tells us which output cells are selected -
+      // if output cells are selected, that is.
+      for (Cell &cell : OnDrawList(m_cellPointers.m_selectionStart.get())) {
+	if (!cell.IsBrokenIntoLines() && !cell.IsHidden() &&
+	    &cell != GetActiveCell())
+	  {
+	    dc.SetPen(*(wxThePenList->FindOrCreatePen(m_configuration->GetColor(TS_SELECTION),
+						      1, wxPENSTYLE_SOLID)));
+	    dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(m_configuration->GetColor(TS_SELECTION))));
+	    cell.DrawBoundingBox(dc, false);
+	    dc.SetBrush(m_configuration->GetBackgroundBrush());
+	    dc.SetPen(*wxWHITE_PEN);
+	  }
+	if (&cell == m_cellPointers.m_selectionEnd)
+	  break;
+      }
+    }
+    cell.Draw(point, &dc, &adc);
+  }
 }
 
 GroupCell *Worksheet::InsertGroupCells(std::unique_ptr<GroupCell> &&cells,
@@ -778,54 +785,54 @@ void Worksheet::ScrollToError() {
 }
 
 GroupCell *Worksheet::GetWorkingGroup(bool resortToLast) const {
-  GroupCell *tmp = m_cellPointers.GetWorkingGroup(resortToLast);
+  GroupCell *cell = m_cellPointers.GetWorkingGroup(resortToLast);
 
   if (!resortToLast)
-    return tmp;
+    return cell;
 
   // The last group maxima was working on no more exists or has been deleted.
-  if (!tmp && m_hCaretActive)
-    tmp = m_hCaretPosition;
+  if (!cell && m_hCaretActive)
+    cell = m_hCaretPosition;
 
   // No such cursor? Perhaps there is a vertically drawn one.
-  if (!tmp && GetActiveCell())
-    tmp = GetActiveCell()->GetGroup();
+  if (!cell && GetActiveCell())
+    cell = GetActiveCell()->GetGroup();
 
   // If there is no such cell, neither, we append the line to the end of the
   // worksheet.
-  if (!tmp)
-    tmp = GetLastCellInWorksheet();
+  if (!cell)
+    cell = GetLastCellInWorksheet();
 
-  return tmp;
+  return cell;
 }
 
 GroupCell *Worksheet::GetInsertGroup() const {
-  GroupCell *tmp = GetWorkingGroup(true);
+  GroupCell *cell = GetWorkingGroup(true);
 
-  if (!tmp && GetActiveCell())
-    tmp = GetActiveCell()->GetGroup();
+  if (!cell && GetActiveCell())
+    cell = GetActiveCell()->GetGroup();
 
-  return tmp;
+  return cell;
 }
 
 void Worksheet::InsertLine(std::unique_ptr<Cell> &&newCell, bool forceNewLine) {
   if (!newCell)
     return;
 
-  GroupCell *tmp = GetInsertGroup();
-  if (!tmp)
+  GroupCell *cell = GetInsertGroup();
+  if (!cell)
     return;
 
   newCell->ForceBreakLine(forceNewLine);
-  tmp->AppendOutput(std::move(newCell));
+  cell->AppendOutput(std::move(newCell));
 
-  Recalculate(tmp);
+  Recalculate(cell);
   OutputChanged();
-  RequestRedraw(tmp);
+  RequestRedraw(cell);
 
   if (FollowEvaluation()) {
     ClearSelection();
-    if (GCContainsCurrentQuestion(tmp))
+    if (GCContainsCurrentQuestion(cell))
       OpenQuestionCaret();
     else
       ScrollToCaret();
@@ -902,21 +909,21 @@ bool Worksheet::RecalculateIfNeeded(bool timeout) {
       wxStopWatch stopwatch;
       bool recalculated = false;
       bool stopwatchStarted = false;
-      for (auto &tmp : OnList(m_recalculateStart)) {
-	recalculated |= tmp.Recalculate();
-	if((tmp.GetRect().GetTop() > m_configuration->GetVisibleRegion().GetBottom()) &&
+      for (auto &cell : OnList(m_recalculateStart)) {
+	recalculated |= cell.Recalculate();
+	if((cell.GetRect().GetTop() > m_configuration->GetVisibleRegion().GetBottom()) &&
 	   recalculated)
 	  {
 	    if(!stopwatchStarted)
 	      stopwatch.Start();
 	  }
-	if(tmp.GetNext() != NULL)
-	  m_recalculateStart = tmp.GetNext();
+	if(cell.GetNext() != NULL)
+	  m_recalculateStart = cell.GetNext();
 	else
 	  {
 	    wxLogMessage(_("Recalculation hit the end of the worksheet => Updating its size"));
 	    m_recalculateStart = {};
-	    UpdateMLast(&tmp);
+	    UpdateMLast(&cell);
 	  }
 	if(stopwatch.Time() > 50)
 	  break;
@@ -925,13 +932,13 @@ bool Worksheet::RecalculateIfNeeded(bool timeout) {
   else
     {
       bool recalculated = false;
-      for (auto &tmp : OnList(m_recalculateStart)) {
-	recalculated |= tmp.Recalculate();
-	if(tmp.GetNext() == NULL)
+      for (auto &cell : OnList(m_recalculateStart)) {
+	recalculated |= cell.Recalculate();
+	if(cell.GetNext() == NULL)
 	  {
 	    wxLogMessage(_("Recalculated the whole worksheet at once => Updating its size"));
 	    
-	    UpdateMLast(&tmp);
+	    UpdateMLast(&cell);
 	  }
       }
       m_recalculateStart = {};
@@ -961,13 +968,13 @@ void Worksheet::Recalculate(Cell *start) {
   else
     // Move m_recalculateStart backwards to start, if start comes before
     // m_recalculateStart.
-    for (auto &tmp : OnList(GetTree())) {
-      if (&tmp == group) {
+    for (auto &cell : OnList(GetTree())) {
+      if (&cell == group) {
         m_recalculateStart = group;
         return;
       }
 
-      if (&tmp == m_recalculateStart)
+      if (&cell == m_recalculateStart)
         return;
     }
   // If the cells to recalculate neither contain the start nor the tree we
@@ -1008,22 +1015,22 @@ void Worksheet::OnSize(wxSizeEvent &event) {
   UpdateConfigurationClientSize();
 
   GroupCell *prev = {};
-  for (auto &tmp : OnList(GetTree())) {
+  for (auto &cell : OnList(GetTree())) {
     if (!prev)
       ClearSelection();
 
-    tmp.OnSize();
+    cell.OnSize();
 
     if (!prev)
-      tmp.SetCurrentPoint(m_configuration->GetIndent(),
+      cell.SetCurrentPoint(m_configuration->GetIndent(),
                           m_configuration->GetBaseIndent() +
-			  tmp.GetCenterList());
+			  cell.GetCenterList());
     else
-      tmp.SetCurrentPoint(m_configuration->GetIndent(),
+      cell.SetCurrentPoint(m_configuration->GetIndent(),
                           prev->GetCurrentPoint().y + prev->GetMaxDrop() +
-			  tmp.GetCenterList() +
+			  cell.GetCenterList() +
 			  m_configuration->GetGroupSkip());
-    prev = &tmp;
+    prev = &cell;
   }
 
   m_adjustWorksheetSizeNeeded = true;
@@ -1238,12 +1245,12 @@ void Worksheet::OnMouseRightDown(wxMouseEvent &event) {
     }
     // SELECTION OF OUTPUT
     else {
-      for (Cell &tmp : OnDrawList(m_cellPointers.m_selectionStart.get())) {
-        auto rect = tmp.GetRect();
+      for (Cell &cell : OnDrawList(m_cellPointers.m_selectionStart.get())) {
+        auto rect = cell.GetRect();
         if (rect.Contains(downx, downy))
           clickInSelection = true;
 
-        if (&tmp == m_cellPointers.m_selectionEnd)
+        if (&cell == m_cellPointers.m_selectionEnd)
           break;
       }
     }
@@ -2188,16 +2195,16 @@ void Worksheet::OnMouseLeftDown(wxMouseEvent &event) {
   GroupCell *previous = NULL;
   GroupCell *clickedBeforeGC = NULL;
   GroupCell *clickedInGC = NULL;
-  for (auto &tmp : OnList(GetTree())) { // go through all groupcells
-    rect = tmp.GetRect();
+  for (auto &cell : OnList(GetTree())) { // go through all groupcells
+    rect = cell.GetRect();
     if (m_down.y < rect.GetTop()) {
-      clickedBeforeGC = &tmp;
+      clickedBeforeGC = &cell;
       break;
     } else if (m_down.y <= rect.GetBottom()) {
-      clickedInGC = &tmp;
+      clickedInGC = &cell;
       break;
     }
-    previous = &tmp;
+    previous = &cell;
   }
 
   if (clickedBeforeGC) { // we clicked between groupcells, set hCaret
@@ -2230,11 +2237,11 @@ GroupCell *Worksheet::FirstVisibleGC() {
   wxPoint point;
   CalcUnscrolledPosition(0, 0, &point.x, &point.y);
 
-  for (auto &tmp : OnList(GetTree())) { // go through all groupcells
-    wxRect rect = tmp.GetRect();
+  for (auto &cell : OnList(GetTree())) { // go through all groupcells
+    wxRect rect = cell.GetRect();
 
     if (point.y < rect.GetBottom())
-      return &tmp;
+      return &cell;
   }
   return {};
 }
@@ -2281,14 +2288,14 @@ void Worksheet::OnMouseWheel(wxMouseEvent &event) {
   //! Step the slide show.
   int rot = event.GetWheelRotation();
 
-  AnimationCell *tmp =
+  AnimationCell *cell =
     m_cellPointers.m_selectionStart.CastAs<AnimationCell *>();
-  tmp->AnimationRunning(false);
+  cell->AnimationRunning(false);
 
   if (rot > 0)
-    tmp->SetDisplayedIndex((tmp->GetDisplayedIndex() + 1) % tmp->Length());
+    cell->SetDisplayedIndex((cell->GetDisplayedIndex() + 1) % cell->Length());
   else
-    tmp->SetDisplayedIndex((tmp->GetDisplayedIndex() - 1) % tmp->Length());
+    cell->SetDisplayedIndex((cell->GetDisplayedIndex() - 1) % cell->Length());
 
   wxRect rect = m_cellPointers.m_selectionStart->GetRect();
   RequestRedraw(rect);
@@ -2300,7 +2307,7 @@ void Worksheet::OnMouseWheel(wxMouseEvent &event) {
     m_mainToolBar->m_plotSlider->SetFocus();
 #endif
 
-    m_mainToolBar->m_plotSlider->SetValue(tmp->GetDisplayedIndex());
+    m_mainToolBar->m_plotSlider->SetValue(cell->GetDisplayedIndex());
   }
 
 #ifdef __WXMSW__
@@ -2341,19 +2348,19 @@ void Worksheet::SelectGroupCells(wxPoint down, wxPoint up) {
   wxRect rect;
 
   // find out the group cell the selection begins in
-  for (auto &tmp : OnList(GetTree())) {
-    rect = tmp.GetRect();
+  for (auto &cell : OnList(GetTree())) {
+    rect = cell.GetRect();
     if (ytop <= rect.GetBottom()) {
-      m_cellPointers.m_selectionStart = &tmp;
+      m_cellPointers.m_selectionStart = &cell;
       break;
     }
   }
 
   // find out the group cell the selection ends in
-  for (auto &tmp : OnList(GetTree())) {
-    rect = tmp.GetRect();
+  for (auto &cell : OnList(GetTree())) {
+    rect = cell.GetRect();
     if (ybottom < rect.GetTop()) {
-      m_cellPointers.m_selectionEnd = tmp.GetPrevious();
+      m_cellPointers.m_selectionEnd = cell.GetPrevious();
       break;
     }
   }
@@ -2493,11 +2500,11 @@ wxString Worksheet::GetString(bool lb) {
     return GetActiveCell() ? GetActiveCell()->ToString() : wxString{};
 
   wxString s;
-  for (Cell &tmp : OnDrawList(m_cellPointers.m_selectionStart.get())) {
-    if (lb && tmp.BreakLineHere() && !s.empty())
+  for (Cell &cell : OnDrawList(m_cellPointers.m_selectionStart.get())) {
+    if (lb && cell.BreakLineHere() && !s.empty())
       s += wxS('\n');
-    s += tmp.ToString();
-    if (&tmp == m_cellPointers.m_selectionEnd)
+    s += cell.ToString();
+    if (&cell == m_cellPointers.m_selectionEnd)
       break;
   }
   return s;
@@ -2534,7 +2541,7 @@ bool Worksheet::Copy(bool astext) {
     wxString s = GetString(true);
     data->Add(new wxmDataObject(s));
 
-    std::unique_ptr<Cell> tmp(CopySelection());
+    std::unique_ptr<Cell> cell(CopySelection());
 
     if (m_configuration->CopyMathML()) {
       // Add a mathML representation of the data to the clipboard
@@ -2563,18 +2570,18 @@ bool Worksheet::Copy(bool astext) {
       // to the clipboard: For some reason Libreoffice likes RTF more than
       // it likes the MathML - which is standardized.
       wxString rtf;
-      rtf = RTFStart() + tmp->ListToRTF() + wxS("\\par\n") + RTFEnd();
+      rtf = RTFStart() + cell->ListToRTF() + wxS("\\par\n") + RTFEnd();
       data->Add(new RtfDataObject(rtf));
       data->Add(new RtfDataObject2(rtf), true);
     }
 
     // Add a string representation of the selected output to the clipboard
-    s = tmp->ListToString();
+    s = cell->ListToString();
     data->Add(new wxTextDataObject(s));
 
     if (m_configuration->CopyBitmap()) {
       // Try to fill bmp with a high-res version of the cells
-      BitmapOut output(&m_configuration, std::move(tmp),
+      BitmapOut output(&m_configuration, std::move(cell),
                        m_configuration->BitmapScale(),
                        1000000 * m_configuration->MaxClipbrdBitmapMegabytes());
       if (output.IsOk())
