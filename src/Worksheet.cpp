@@ -569,10 +569,10 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 	      cell.GetOutput()->ClearCacheList();
 	  }
 	}
-
-	m_drawThreads.push_back(std::unique_ptr<std::thread>(new std::thread(&Worksheet::DrawGroupCell_UsingBitmap,
-										 this, dc, cell, unscrolledRect)));
-	  //	DrawGroupCell(dc, antiAliassingDC, cell);
+	m_drawThreads.push_back(std::thread(&Worksheet::DrawGroupCell_UsingBitmap,
+					    this,
+					    &dc, &cell, unscrolledRect));
+	//	DrawGroupCell(dc, antiAliassingDC, cell);
       }
     }
 
@@ -644,11 +644,11 @@ void Worksheet::PrepareDrawGC(wxDC &dc)
   dc.SetLogicalFunction(wxCOPY);
 }
 
-void Worksheet::DrawGroupCell_UsingBitmap(wxDC &dc, GroupCell &cell, const wxRect &DrawRegion)
+void Worksheet::DrawGroupCell_UsingBitmap(wxDC *dc, GroupCell *cell, wxRect DrawRegion)
 {
   // Determine which rectangle we need to draw, effectively:
   // The part of the GroupCell that is in the region to be drawn.
-  wxRect drawRect = cell.GetRect();
+  wxRect drawRect = cell->GetRect();
   if(drawRect.GetHeight() < 1)
     return;
   if(drawRect.GetWidth() < 1)
@@ -682,13 +682,13 @@ void Worksheet::DrawGroupCell_UsingBitmap(wxDC &dc, GroupCell &cell, const wxRec
   dcm.DrawRectangle(drawRect);
 
   // Fill the bitmap with contents
-  DrawGroupCell(dcm, antiAliassingDC, cell);
+  DrawGroupCell(dcm, antiAliassingDC, *cell);
 
   // Blit the bitmap onto the destination dc
   {
     std::lock_guard<std::mutex> guard(m_drawDCLock);
-    dc.Blit(drawRect.GetLeft(), drawRect.GetTop(), drawRect.GetWidth(), drawRect.GetHeight(),
-	    &dcm, drawRect.GetLeft(), drawRect.GetTop());
+    dc->Blit(drawRect.GetLeft(), drawRect.GetTop(), drawRect.GetWidth(), drawRect.GetHeight(),
+	     &dcm, drawRect.GetLeft(), drawRect.GetTop());
   }
 }
 

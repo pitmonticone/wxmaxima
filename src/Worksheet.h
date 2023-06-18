@@ -487,7 +487,7 @@ private:
     as long as there is a mutex watching that we do the blit when no-one else
     accesses the DC should be fine.
    */
-  void DrawGroupCell_UsingBitmap(wxDC &dc, GroupCell &cell, const wxRect &DrawRegion);
+  void DrawGroupCell_UsingBitmap(wxDC *dc, GroupCell *cell, wxRect DrawRegion);
 
   //! All that has need to be done before drawing a GroupCell in a DC
   void PrepareDrawGC(wxDC &dc);
@@ -686,7 +686,7 @@ public:
   //! Is called if this element looses or gets the focus
   void OnActivate(wxActivateEvent &event);
 private:
-  std::vector<std::unique_ptr<std::thread>> m_drawThreads;
+  std::vector<std::thread> m_drawThreads;
   static std::mutex m_drawDCLock;
   /*! The pointer to thesettings storage
    */
