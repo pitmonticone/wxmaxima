@@ -569,8 +569,9 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 	      cell.GetOutput()->ClearCacheList();
 	  }
 	}
-	
-	DrawGroupCell(dc, antiAliassingDC, cell);
+
+	DrawGroupCell_UsingBitmap(dc, cell, rect);
+	  //	DrawGroupCell(dc, antiAliassingDC, cell);
       }
     }
     
@@ -641,34 +642,41 @@ void Worksheet::DrawGroupCell_UsingBitmap(wxDC &dc, GroupCell &cell, const wxRec
   // The part of the GroupCell that is in the region to be drawn.
   wxRect drawRect = cell.GetRect();
   drawRect.Intersect(DrawRegion);
+  if(drawRect.GetHeight() < 1)
+    return;
+  if(drawRect.GetWidth() < 1)
+    return;
   wxSize sz(drawRect.GetWidth(), drawRect.GetHeight());
   
   // Create a bitap of the size of our drawRect
 #ifdef __WXMAC__
   wxBitmap bmp =
-    wxBitmap(drawRect * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH,
+    wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH,
 	     wxWindow::GetContentScaleFactor());
 #else
   wxBitmap bmp =
     wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH);
 #endif
-
+  wxASSERT(bmp.IsOk());
   // Create a DrawContext that draws on a bitmap the size of our drawRect
-  wxMemoryDC dcm;
+  wxMemoryDC dcm(bmp);
   dcm.SetUserScale(wxWindow::GetContentScaleFactor(),
 		   wxWindow::GetContentScaleFactor());
   dcm.SetDeviceOrigin(drawRect.GetLeft(), drawRect.GetTop());
-  dcm.SelectObject(m_memory);
   PrepareDrawGC(dcm);
-
+  wxASSERT(dcm.IsOk());
   // Create an antialiassing DrawContext that draws on dcm
   wxGCDC antiAliassingDC(dcm);
   PrepareDrawGC(antiAliassingDC);
+  wxASSERT(antiAliassingDC.IsOk());
 
-  // Fill the bitmap
+  // Clear the drawing area. Clear() doesn't work in some wx3.0 installs
+  dcm.DrawRectangle(drawRect);
+
+  // Fill the bitmap with contents
   DrawGroupCell(dcm, antiAliassingDC, cell);
 
-  // Blit the bitmap onto the original dc
+  // Blit the bitmap onto the destination dc
   dc.Blit(drawRect.GetLeft(), drawRect.GetTop(), drawRect.GetWidth(), drawRect.GetHeight(),
 	  &dcm, drawRect.GetLeft(), drawRect.GetTop());
 }
