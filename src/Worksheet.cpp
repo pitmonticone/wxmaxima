@@ -530,29 +530,6 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
     dc.DrawRectangle(unscrolledRect);
 
     //
-    // Draw the selection marks
-    //
-    if (HasCellsSelected() &&
-        m_cellPointers.m_selectionStart->GetType() != MC_TYPE_GROUP) {
-      dc.SetPen(*(wxThePenList->FindOrCreatePen(
-								       m_configuration->GetColor(TS_SELECTION), 1, wxPENSTYLE_SOLID)));
-      dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(
-									     m_configuration->GetColor(TS_SELECTION))));
-
-      // Draw the marker that tells us which output cells are selected -
-      // if output cells are selected, that is.
-      for (Cell &tmp : OnDrawList(m_cellPointers.m_selectionStart.get())) {
-        if (!tmp.IsBrokenIntoLines() && !tmp.IsHidden() &&
-            &tmp != GetActiveCell())
-          tmp.DrawBoundingBox(dc, false);
-        if (&tmp == m_cellPointers.m_selectionEnd)
-          break;
-      }
-      dc.SetBrush(m_configuration->GetBackgroundBrush());
-      dc.SetPen(*wxWHITE_PEN);
-    }
-
-    //
     // Draw the cell contents
     //
     if (GetTree()) {
@@ -568,7 +545,7 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 
       bool atStart = true;
       for (auto &tmp : OnList(GetTree())) {
-        if (!atStart) {
+	if (!atStart) {
           tmp.UpdateYPosition();
           point = tmp.GetCurrentPoint();
         }
@@ -604,11 +581,35 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
         if (tmp.DrawThisCell(point)) {
           tmp.InEvaluationQueue(m_evaluationQueue.IsInQueue(&tmp));
           tmp.LastInEvaluationQueue(m_evaluationQueue.GetCell() == &tmp);
-        }
-        tmp.Draw(point, &dc, &antiAliassingDC);
+	  
+	  //
+	  // Draw the selection marks for an eventual selection inside this cell
+	  //
+	  if (HasCellsSelected() &&
+	      (m_cellPointers.m_selectionStart->GetType() != MC_TYPE_GROUP) &&
+	      (&tmp == m_cellPointers.m_selectionStart->GetGroup())) {
+	    // Draw the marker that tells us which output cells are selected -
+	    // if output cells are selected, that is.
+	    for (Cell &cell : OnDrawList(m_cellPointers.m_selectionStart.get())) {
+	      if (!cell.IsBrokenIntoLines() && !cell.IsHidden() &&
+		  &cell != GetActiveCell())
+		{
+		  dc.SetPen(*(wxThePenList->FindOrCreatePen(m_configuration->GetColor(TS_SELECTION),
+							    1, wxPENSTYLE_SOLID)));
+		  dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(m_configuration->GetColor(TS_SELECTION))));
+		  cell.DrawBoundingBox(dc, false);
+		  dc.SetBrush(m_configuration->GetBackgroundBrush());
+		  dc.SetPen(*wxWHITE_PEN);
+		}
+	      if (&cell == m_cellPointers.m_selectionEnd)
+		break;
+	    }
+	  }
+	  tmp.Draw(point, &dc, &antiAliassingDC);
+	}
       }
     }
-
+    
     //
     // Draw the horizontal caret
     //
