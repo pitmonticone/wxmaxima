@@ -478,8 +478,20 @@ private:
        for that to work.
   */
   void OnPaint(wxPaintEvent &event);
+  //! Draws a groupcell on the DC
   void DrawGroupCell(wxDC &dc, wxDC &adc, GroupCell &cell);
+  /*! Draws a groupcell in a bitmap and then blits it onto the DC
 
+    Drawing to a DC is only allowed to one Thread at once. But doing the lenghty
+    stuff with bitmaps is possible to do in multiple threads at the same time so
+    as long as there is a mutex watching that we do the blit when no-one else
+    accesses the DC should be fine.
+   */
+  void DrawGroupCell_UsingBitmap(wxDC &dc, GroupCell &cell, const wxRect &DrawRegion);
+
+  //! All that has need to be done before drawing a GroupCell in a DC
+  void PrepareDrawGC(wxDC &dc);
+  
   void OnSize(wxSizeEvent &event);
 
   void OnMouseRightDown(wxMouseEvent &event);

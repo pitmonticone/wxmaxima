@@ -502,18 +502,8 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 
     // Set line pen and fill brushes
     SetBackgroundColour(m_configuration->DefaultBackgroundColor());
-    dc.SetBackgroundMode(wxTRANSPARENT);
-    dc.SetBackground(
-					    m_configuration->GetBackgroundBrush());
-    dc.SetBrush(m_configuration->GetBackgroundBrush());
-    dc.SetPen(*wxWHITE_PEN);
-    dc.SetLogicalFunction(wxCOPY);
-
-    antiAliassingDC.SetMapMode(wxMM_TEXT);
-    antiAliassingDC.SetBackgroundMode(wxTRANSPARENT);
-    antiAliassingDC.SetBrush(m_configuration->GetBackgroundBrush());
-    antiAliassingDC.SetPen(*wxWHITE_PEN);
-    antiAliassingDC.SetLogicalFunction(wxCOPY);
+    PrepareDrawGC(dc);
+    PrepareDrawGC(antiAliassingDC);
     
     // Tell the configuration where to crop in this region
     int xstart, xend, top, bottom;
@@ -633,6 +623,54 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   }
 
   m_configuration->ReportMultipleRedraws();
+}
+
+void Worksheet::PrepareDrawGC(wxDC &dc)
+{
+  dc.SetMapMode(wxMM_TEXT);
+  dc.SetBackgroundMode(wxTRANSPARENT);
+  dc.SetBackground(m_configuration->GetBackgroundBrush());
+  dc.SetBrush(m_configuration->GetBackgroundBrush());
+  dc.SetPen(*wxWHITE_PEN);
+  dc.SetLogicalFunction(wxCOPY);
+}
+
+void Worksheet::DrawGroupCell_UsingBitmap(wxDC &dc, GroupCell &cell, const wxRect &DrawRegion)
+{
+  // Determine which rectangle we need to draw, effectively:
+  // The part of the GroupCell that is in the region to be drawn.
+  wxRect drawRect = cell.GetRect();
+  drawRect.Intersect(DrawRegion);
+  wxSize sz(drawRect.GetWidth(), drawRect.GetHeight());
+  
+  // Create a bitap of the size of our drawRect
+#ifdef __WXMAC__
+  wxBitmap bmp =
+    wxBitmap(drawRect * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH,
+	     wxWindow::GetContentScaleFactor());
+#else
+  wxBitmap bmp =
+    wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH);
+#endif
+
+  // Create a DrawContext that draws on a bitmap the size of our drawRect
+  wxMemoryDC dcm;
+  dcm.SetUserScale(wxWindow::GetContentScaleFactor(),
+		   wxWindow::GetContentScaleFactor());
+  dcm.SetDeviceOrigin(drawRect.GetLeft(), drawRect.GetTop());
+  dcm.SelectObject(m_memory);
+  PrepareDrawGC(dcm);
+
+  // Create an antialiassing DrawContext that draws on dcm
+  wxGCDC antiAliassingDC(dcm);
+  PrepareDrawGC(antiAliassingDC);
+
+  // Fill the bitmap
+  DrawGroupCell(dcm, antiAliassingDC, cell);
+
+  // Blit the bitmap onto the original dc
+  dc.Blit(drawRect.GetLeft(), drawRect.GetTop(), drawRect.GetWidth(), drawRect.GetHeight(),
+	  &dcm, drawRect.GetLeft(), drawRect.GetTop());
 }
 
 void Worksheet::DrawGroupCell(wxDC &dc, wxDC &adc, GroupCell &cell)
