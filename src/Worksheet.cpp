@@ -516,7 +516,7 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
     unscrolledRect.SetBottom(bottom);
     m_configuration->SetUpdateRegion(unscrolledRect);
 
-    // Clear the drawing area
+    // Clear the drawing area (Clear() doesn't work on some wx3.0 installs)
     dc.DrawRectangle(unscrolledRect);
 
     //
@@ -570,56 +570,64 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 	  }
 	}
 
-	DrawGroupCell_UsingBitmap(dc, cell, rect);
+	m_drawThreads.push_back(std::unique_ptr<std::thread>(new std::thread(&Worksheet::DrawGroupCell_UsingBitmap,
+										 this, dc, cell, unscrolledRect)));
 	  //	DrawGroupCell(dc, antiAliassingDC, cell);
       }
     }
-    
-    //
-    // Draw the horizontal caret
-    //
-    if ((m_hCaretActive) && (m_hCaretPositionStart == NULL) &&
-        (m_hCaretBlinkVisible) && (m_hasFocus) && (m_hCaretPosition != NULL)) {
-      dc.SetPen(*(wxThePenList->FindOrCreatePen(
-								       m_configuration->GetColor(TS_CURSOR), 1, wxPENSTYLE_SOLID)));
-      dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(
-									     m_configuration->GetColor(TS_CURSOR), wxBRUSHSTYLE_SOLID)));
 
-      wxRect currentGCRect = m_hCaretPosition->GetRect();
-      int caretY = (static_cast<int>(m_configuration->GetGroupSkip())) / 2 +
-	currentGCRect.GetBottom() + 1;
-      dc.DrawRectangle(
-					      xstart + m_configuration->GetBaseIndent(),
-					      caretY - m_configuration->GetCursorWidth() / 2, MC_HCARET_WIDTH,
-					      m_configuration->GetCursorWidth());
-    }
+    {
+      std::lock_guard<std::mutex> guard(m_drawDCLock);
+      
+      //
+      // Draw the horizontal caret
+      //
+      if ((m_hCaretActive) && (m_hCaretPositionStart == NULL) &&
+	  (m_hCaretBlinkVisible) && (m_hasFocus) && (m_hCaretPosition != NULL)) {
+	dc.SetPen(*(wxThePenList->FindOrCreatePen(
+						  m_configuration->GetColor(TS_CURSOR), 1, wxPENSTYLE_SOLID)));
+	dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(
+							m_configuration->GetColor(TS_CURSOR), wxBRUSHSTYLE_SOLID)));
 
-    if ((m_hCaretActive) && (m_hCaretPositionStart == NULL) && (m_hasFocus) &&
-        (m_hCaretPosition == NULL)) {
-      if (!m_hCaretBlinkVisible) {
-        dc.SetBrush(
-					   m_configuration->GetBackgroundBrush());
-        dc.SetPen(*wxThePenList->FindOrCreatePen(
-									GetBackgroundColour(), m_configuration->Scale_Px(1)));
-      } else {
-        dc.SetPen(*(wxThePenList->FindOrCreatePen(
-									 m_configuration->GetColor(TS_CURSOR), m_configuration->Scale_Px(1),
-									 wxPENSTYLE_SOLID)));
-        dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(
-									       m_configuration->GetColor(TS_CURSOR), wxBRUSHSTYLE_SOLID)));
+	wxRect currentGCRect = m_hCaretPosition->GetRect();
+	int caretY = (static_cast<int>(m_configuration->GetGroupSkip())) / 2 +
+	  currentGCRect.GetBottom() + 1;
+	dc.DrawRectangle(
+			 xstart + m_configuration->GetBaseIndent(),
+			 caretY - m_configuration->GetCursorWidth() / 2, MC_HCARET_WIDTH,
+			 m_configuration->GetCursorWidth());
       }
 
-      wxRect cursor =
-	wxRect(xstart + m_configuration->GetCellBracketWidth(),
-	       (m_configuration->GetBaseIndent() -
-		m_configuration->GetCursorWidth()) /
-	       2,
-	       MC_HCARET_WIDTH, m_configuration->GetCursorWidth());
-      dc.DrawRectangle(cursor);
-    }
+      if ((m_hCaretActive) && (m_hCaretPositionStart == NULL) && (m_hasFocus) &&
+	  (m_hCaretPosition == NULL)) {
+	if (!m_hCaretBlinkVisible) {
+	  dc.SetBrush(
+		      m_configuration->GetBackgroundBrush());
+	  dc.SetPen(*wxThePenList->FindOrCreatePen(
+						   GetBackgroundColour(), m_configuration->Scale_Px(1)));
+	} else {
+	  dc.SetPen(*(wxThePenList->FindOrCreatePen(
+						    m_configuration->GetColor(TS_CURSOR), m_configuration->Scale_Px(1),
+						    wxPENSTYLE_SOLID)));
+	  dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(
+							  m_configuration->GetColor(TS_CURSOR), wxBRUSHSTYLE_SOLID)));
+	}
 
+	wxRect cursor =
+	  wxRect(xstart + m_configuration->GetCellBracketWidth(),
+		 (m_configuration->GetBaseIndent() -
+		  m_configuration->GetCursorWidth()) /
+		 2,
+		 MC_HCARET_WIDTH, m_configuration->GetCursorWidth());
+	dc.DrawRectangle(cursor);
+      }
+    }
+    
     m_lastTop = top;
     m_lastBottom = bottom;
+    for(auto &i:m_drawThreads)
+      if(i.joinable())
+	i.join();
     region++;
   }
 
@@ -641,7 +649,6 @@ void Worksheet::DrawGroupCell_UsingBitmap(wxDC &dc, GroupCell &cell, const wxRec
   // Determine which rectangle we need to draw, effectively:
   // The part of the GroupCell that is in the region to be drawn.
   wxRect drawRect = cell.GetRect();
-  drawRect.Intersect(DrawRegion);
   if(drawRect.GetHeight() < 1)
     return;
   if(drawRect.GetWidth() < 1)
@@ -662,7 +669,8 @@ void Worksheet::DrawGroupCell_UsingBitmap(wxDC &dc, GroupCell &cell, const wxRec
   wxMemoryDC dcm(bmp);
   dcm.SetUserScale(wxWindow::GetContentScaleFactor(),
 		   wxWindow::GetContentScaleFactor());
-  dcm.SetDeviceOrigin(drawRect.GetLeft(), drawRect.GetTop());
+  dcm.SetDeviceOrigin(-drawRect.GetLeft(), -drawRect.GetTop());
+  //dcm.SetLogicalOrigin(-drawRect.GetLeft(), -drawRect.GetTop());
   PrepareDrawGC(dcm);
   wxASSERT(dcm.IsOk());
   // Create an antialiassing DrawContext that draws on dcm
@@ -677,8 +685,11 @@ void Worksheet::DrawGroupCell_UsingBitmap(wxDC &dc, GroupCell &cell, const wxRec
   DrawGroupCell(dcm, antiAliassingDC, cell);
 
   // Blit the bitmap onto the destination dc
-  dc.Blit(drawRect.GetLeft(), drawRect.GetTop(), drawRect.GetWidth(), drawRect.GetHeight(),
-	  &dcm, drawRect.GetLeft(), drawRect.GetTop());
+  {
+    std::lock_guard<std::mutex> guard(m_drawDCLock);
+    dc.Blit(drawRect.GetLeft(), drawRect.GetTop(), drawRect.GetWidth(), drawRect.GetHeight(),
+	    &dcm, drawRect.GetLeft(), drawRect.GetTop());
+  }
 }
 
 void Worksheet::DrawGroupCell(wxDC &dc, wxDC &adc, GroupCell &cell)
@@ -8330,6 +8341,7 @@ wxDataFormat Worksheet::m_mathmlFormat2;
 wxDataFormat Worksheet::m_rtfFormat;
 wxDataFormat Worksheet::m_rtfFormat2;
 wxDataFormat Worksheet::m_wxmFormat;
+std::mutex Worksheet::m_drawDCLock;
 
 CellPointers *Cell::GetCellPointers() const {
   return &GetWorksheet()->GetCellPointers();

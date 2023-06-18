@@ -686,6 +686,8 @@ public:
   //! Is called if this element looses or gets the focus
   void OnActivate(wxActivateEvent &event);
 private:
+  std::vector<std::unique_ptr<std::thread>> m_drawThreads;
+  static std::mutex m_drawDCLock;
   /*! The pointer to thesettings storage
    */
   Configuration *m_configuration;
