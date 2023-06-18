@@ -148,14 +148,16 @@ void FracCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
 	2;
       denom.y = point.y + m_displayedDenom->GetCenterList() + Scale_Px(4);
       m_displayedDenom->DrawList(denom, dc, antialiassingDC);
-      SetPen(antialiassingDC, 1.2);
       if (m_fracStyle != FC_CHOOSE)
-        dc->DrawLine(point.x + m_horizontalGapLeft +
-		     m_configuration->GetDefaultLineWidth() / 2,
-                     point.y + Scale_Px(2),
-                     point.x + m_width - m_horizontalGapRight -
-		     m_configuration->GetDefaultLineWidth() / 2,
-                     point.y + Scale_Px(2));
+	{
+	  SetPen(antialiassingDC, 1.2);
+	  antialiassingDC->DrawLine(point.x + m_horizontalGapLeft +
+				    m_configuration->GetDefaultLineWidth() / 2,
+				    point.y + Scale_Px(2),
+				    point.x + m_width - m_horizontalGapRight -
+				    m_configuration->GetDefaultLineWidth() / 2,
+				    point.y + Scale_Px(2));
+	}
     }
   }
 }

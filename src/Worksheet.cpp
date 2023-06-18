@@ -580,7 +580,7 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 	  }
 	}
 	
-	DrawGroupCell(dc, antiAliassingDC, cell, point);
+	DrawGroupCell(dc, antiAliassingDC, cell);
       }
     }
     
@@ -635,9 +635,9 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   m_configuration->ReportMultipleRedraws();
 }
 
-void Worksheet::DrawGroupCell(wxDC &dc, wxDC &adc, GroupCell &cell, const wxPoint &point)
+void Worksheet::DrawGroupCell(wxDC &dc, wxDC &adc, GroupCell &cell)
 {
-  if (cell.DrawThisCell(point)) {
+  if (cell.DrawThisCell(cell.GetCurrentPoint())) {
     cell.InEvaluationQueue(m_evaluationQueue.IsInQueue(&cell));
     cell.LastInEvaluationQueue(m_evaluationQueue.GetCell() == &cell);
     
@@ -664,7 +664,7 @@ void Worksheet::DrawGroupCell(wxDC &dc, wxDC &adc, GroupCell &cell, const wxPoin
 	  break;
       }
     }
-    cell.Draw(point, &dc, &adc);
+    cell.Draw(cell.GetCurrentPoint(), &dc, &adc);
   }
 }
 

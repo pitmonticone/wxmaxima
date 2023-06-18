@@ -478,7 +478,7 @@ private:
        for that to work.
   */
   void OnPaint(wxPaintEvent &event);
-  void DrawGroupCell(wxDC &dc, wxDC &adc, GroupCell &cell, const wxPoint &point);
+  void DrawGroupCell(wxDC &dc, wxDC &adc, GroupCell &cell);
 
   void OnSize(wxSizeEvent &event);
 
