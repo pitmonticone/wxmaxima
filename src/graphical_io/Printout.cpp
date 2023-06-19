@@ -128,7 +128,10 @@ bool Printout::OnPrintPage(int num) {
     group = group->GetNext();
   }
 
-  wxPen pen = *(wxThePenList->FindOrCreatePen(*wxRED, 10, wxPENSTYLE_SOLID));
+  {
+    std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+    wxPen pen = *(wxThePenList->FindOrCreatePen(*wxRED, 10, wxPENSTYLE_SOLID));
+  }
   return true;
 }
 

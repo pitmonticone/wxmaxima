@@ -503,6 +503,7 @@ void TextCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
 }
 
 void TextCell::SetFont(wxDC *dc, AFontSize fontsize) {
+  std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
   if(dc == NULL)
     {
       wxLogMessage(_("Bug: dc == NULL"));

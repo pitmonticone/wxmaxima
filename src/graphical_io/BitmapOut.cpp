@@ -101,8 +101,11 @@ void BitmapOut::Draw() {
   config.ClipToDrawRegion(false);
 
   auto bgColor = config.m_styles[TS_TEXT_BACKGROUND].GetColor();
-  m_dc.SetBackground(
-		     *(wxTheBrushList->FindOrCreateBrush(bgColor, wxBRUSHSTYLE_SOLID)));
+  {
+    std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+    m_dc.SetBackground(
+		       *(wxTheBrushList->FindOrCreateBrush(bgColor, wxBRUSHSTYLE_SOLID)));
+  }
   m_dc.Clear();
 
   m_cmn.Draw(m_tree.get());

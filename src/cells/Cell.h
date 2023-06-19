@@ -156,7 +156,7 @@ class Cell: public Observed
 public:
 //  Cell(GroupCell *group, Configuration *config);
   Cell(GroupCell *group, Configuration *config);
-
+  
   /*! Create a copy of this cell
 
     This method is purely virtual, which means every child class has to define

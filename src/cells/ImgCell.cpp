@@ -177,8 +177,11 @@ void ImgCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     wxMemoryDC bitmapDC;
 
     if (m_drawBoundingBox)
-      dc->SetBrush(*(wxTheBrushList->FindOrCreateBrush(
-						       m_configuration->GetColor(TS_SELECTION))));
+      {
+	std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+	dc->SetBrush(*(wxTheBrushList->FindOrCreateBrush(
+							 m_configuration->GetColor(TS_SELECTION))));
+      }
     else
       SetPen(dc);
 

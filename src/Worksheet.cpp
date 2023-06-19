@@ -127,8 +127,12 @@ Worksheet::Worksheet(wxWindow *parent, int id,
   m_configuration->SetWorkSheet(this);
   m_configuration->ReadConfig();
   SetBackgroundColour(m_configuration->DefaultBackgroundColor());
-  m_configuration->SetBackgroundBrush(*(wxTheBrushList->FindOrCreateBrush(
-									  m_configuration->DefaultBackgroundColor(), wxBRUSHSTYLE_SOLID)));
+  {
+    std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+
+    m_configuration->SetBackgroundBrush(*(wxTheBrushList->FindOrCreateBrush(
+									    m_configuration->DefaultBackgroundColor(), wxBRUSHSTYLE_SOLID)));
+  }
   m_redrawStart = NULL;
   m_fullRedrawRequested = false;
   m_autocompletePopup = NULL;
@@ -454,8 +458,11 @@ Worksheet::~Worksheet() {
 
 void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
   m_configuration->ClearAndEnableRedrawTracing();
-  m_configuration->SetBackgroundBrush(*(wxTheBrushList->FindOrCreateBrush(
-									  m_configuration->DefaultBackgroundColor(), wxBRUSHSTYLE_SOLID)));
+  {
+    std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+    m_configuration->SetBackgroundBrush(*(wxTheBrushList->FindOrCreateBrush(
+									    m_configuration->DefaultBackgroundColor(), wxBRUSHSTYLE_SOLID)));
+  }
   wxAutoBufferedPaintDC dc(this);
   if (!dc.IsOk())
     return;
@@ -528,11 +535,13 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
       point.y = m_configuration->GetBaseIndent() + GetTree()->GetCenterList();
 
       // Draw tree
-      dc.SetPen(*(wxThePenList->FindOrCreatePen(
-								       m_configuration->GetColor(TS_MATH), 1, wxPENSTYLE_SOLID)));
-      dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(
-									     m_configuration->GetColor(TS_MATH))));
-
+      {
+	std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+	dc.SetPen(*(wxThePenList->FindOrCreatePen(
+						  m_configuration->GetColor(TS_MATH), 1, wxPENSTYLE_SOLID)));
+	dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(
+							m_configuration->GetColor(TS_MATH))));
+      }
       bool atStart = true;
       for (auto &cell : OnList(GetTree())) {
 	if (!atStart) {
@@ -569,10 +578,10 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
 	      cell.GetOutput()->ClearCacheList();
 	  }
 	}
-	m_drawThreads.push_back(std::thread(&Worksheet::DrawGroupCell_UsingBitmap,
-					    this,
-					    &dc, &cell, unscrolledRect));
-	//	DrawGroupCell(dc, antiAliassingDC, cell);
+	//	m_drawThreads.push_back(std::thread(&Worksheet::DrawGroupCell_UsingBitmap,
+	//				    this,
+	//				    &dc, &cell, unscrolledRect));
+	DrawGroupCell(dc, antiAliassingDC, cell);
       }
     }
 
@@ -584,11 +593,13 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
       //
       if ((m_hCaretActive) && (m_hCaretPositionStart == NULL) &&
 	  (m_hCaretBlinkVisible) && (m_hasFocus) && (m_hCaretPosition != NULL)) {
-	dc.SetPen(*(wxThePenList->FindOrCreatePen(
-						  m_configuration->GetColor(TS_CURSOR), 1, wxPENSTYLE_SOLID)));
-	dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(
-							m_configuration->GetColor(TS_CURSOR), wxBRUSHSTYLE_SOLID)));
-
+	{
+	  std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+	  dc.SetPen(*(wxThePenList->FindOrCreatePen(
+						    m_configuration->GetColor(TS_CURSOR), 1, wxPENSTYLE_SOLID)));
+	  dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(
+							  m_configuration->GetColor(TS_CURSOR), wxBRUSHSTYLE_SOLID)));
+	}
 	wxRect currentGCRect = m_hCaretPosition->GetRect();
 	int caretY = (static_cast<int>(m_configuration->GetGroupSkip())) / 2 +
 	  currentGCRect.GetBottom() + 1;
@@ -601,11 +612,13 @@ void Worksheet::OnPaint(wxPaintEvent &WXUNUSED(event)) {
       if ((m_hCaretActive) && (m_hCaretPositionStart == NULL) && (m_hasFocus) &&
 	  (m_hCaretPosition == NULL)) {
 	if (!m_hCaretBlinkVisible) {
+	  std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
 	  dc.SetBrush(
 		      m_configuration->GetBackgroundBrush());
 	  dc.SetPen(*wxThePenList->FindOrCreatePen(
 						   GetBackgroundColour(), m_configuration->Scale_Px(1)));
 	} else {
+	  std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
 	  dc.SetPen(*(wxThePenList->FindOrCreatePen(
 						    m_configuration->GetColor(TS_CURSOR), m_configuration->Scale_Px(1),
 						    wxPENSTYLE_SOLID)));
@@ -665,31 +678,35 @@ void Worksheet::DrawGroupCell_UsingBitmap(wxDC *dc, GroupCell *cell, wxRect Draw
     wxBitmap(sz * wxWindow::GetContentScaleFactor(), wxBITMAP_SCREEN_DEPTH);
 #endif
   wxASSERT(bmp.IsOk());
-  // Create a DrawContext that draws on a bitmap the size of our drawRect
-  wxMemoryDC dcm(bmp);
-  dcm.SetUserScale(wxWindow::GetContentScaleFactor(),
-		   wxWindow::GetContentScaleFactor());
-  dcm.SetDeviceOrigin(-drawRect.GetLeft(), -drawRect.GetTop());
-  //dcm.SetLogicalOrigin(-drawRect.GetLeft(), -drawRect.GetTop());
-  PrepareDrawGC(dcm);
-  wxASSERT(dcm.IsOk());
-  // Create an antialiassing DrawContext that draws on dcm
-  wxGCDC antiAliassingDC(dcm);
-  PrepareDrawGC(antiAliassingDC);
-  wxASSERT(antiAliassingDC.IsOk());
-
-  // Clear the drawing area. Clear() doesn't work in some wx3.0 installs
-  dcm.DrawRectangle(drawRect);
-
-  // Fill the bitmap with contents
-  DrawGroupCell(dcm, antiAliassingDC, *cell);
-
-  // Blit the bitmap onto the destination dc
   {
-    std::lock_guard<std::mutex> guard(m_drawDCLock);
+    // Create a DrawContext that draws on a bitmap the size of our drawRect
+    m_drawDCLock.lock();
+    wxMemoryDC dcm(bmp);
+    m_drawDCLock.unlock();
+    dcm.SetUserScale(wxWindow::GetContentScaleFactor(),
+		     wxWindow::GetContentScaleFactor());
+    dcm.SetDeviceOrigin(-drawRect.GetLeft(), -drawRect.GetTop());
+    //dcm.SetLogicalOrigin(-drawRect.GetLeft(), -drawRect.GetTop());
+    PrepareDrawGC(dcm);
+    wxASSERT(dcm.IsOk());
+    // Create an antialiassing DrawContext that draws on dcm
+    wxGCDC antiAliassingDC(dcm);
+    PrepareDrawGC(antiAliassingDC);
+    wxASSERT(antiAliassingDC.IsOk());
+
+    // Clear the drawing area. Clear() doesn't work in some wx3.0 installs
+    dcm.DrawRectangle(drawRect);
+
+    // Fill the bitmap with contents
+    DrawGroupCell(dcm, antiAliassingDC, *cell);
+
+    // This lock does guard the destruction of the memory DC, as well as the blit
+    m_drawDCLock.lock();
+    // Blit the bitmap onto the destination dc
     dc->Blit(drawRect.GetLeft(), drawRect.GetTop(), drawRect.GetWidth(), drawRect.GetHeight(),
 	     &dcm, drawRect.GetLeft(), drawRect.GetTop());
   }
+  m_drawDCLock.unlock();
 }
 
 void Worksheet::DrawGroupCell(wxDC &dc, wxDC &adc, GroupCell &cell)
@@ -710,9 +727,12 @@ void Worksheet::DrawGroupCell(wxDC &dc, wxDC &adc, GroupCell &cell)
 	if (!cell.IsBrokenIntoLines() && !cell.IsHidden() &&
 	    &cell != GetActiveCell())
 	  {
-	    dc.SetPen(*(wxThePenList->FindOrCreatePen(m_configuration->GetColor(TS_SELECTION),
-						      1, wxPENSTYLE_SOLID)));
-	    dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(m_configuration->GetColor(TS_SELECTION))));
+	    {
+	      std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+	      dc.SetPen(*(wxThePenList->FindOrCreatePen(m_configuration->GetColor(TS_SELECTION),
+							1, wxPENSTYLE_SOLID)));
+	      dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(m_configuration->GetColor(TS_SELECTION))));
+	    }
 	    cell.DrawBoundingBox(dc, false);
 	    dc.SetBrush(m_configuration->GetBackgroundBrush());
 	    dc.SetPen(*wxWHITE_PEN);

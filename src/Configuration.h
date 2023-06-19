@@ -31,6 +31,7 @@
 #include "LoggingMessageDialog.h"
 #include "TextStyle.h"
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <random>
 #include <list>
@@ -163,6 +164,8 @@ public:
       m_dc = &dc;
     }
   void UnsetContext() {m_dc = NULL;}
+
+  static std::mutex m_refcount_mutex;
 
   void SetBackgroundBrush(wxBrush brush);
   bool FixedFontInTextControls() const {return m_fixedFontTC;}

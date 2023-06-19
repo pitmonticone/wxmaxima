@@ -705,8 +705,11 @@ void GroupCell::Draw(wxPoint const point, wxDC *dc, wxDC *antialiassingDC) {
   if (m_groupType == GC_TYPE_PAGEBREAK) {
     wxRect rect = GetRect(false);
     int y = rect.GetY();
-    wxPen pen(m_configuration->GetColor(TS_CURSOR), 1, wxPENSTYLE_DOT);
-    dc->SetPen(pen);
+    {
+      std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+      wxPen pen(m_configuration->GetColor(TS_CURSOR), 1, wxPENSTYLE_DOT);
+      dc->SetPen(pen);
+    }
     dc->DrawLine(0, y, m_configuration->GetCanvasSize().GetWidth(), y);
     return;
   }
@@ -824,24 +827,33 @@ void GroupCell::DrawBracket(wxDC *dc, wxDC *antialiassingDC) {
   // will add brackets in
   if ((m_currentPoint.y >= selectionStart_px) &&
       (m_currentPoint.y <= selectionEnd_px)) {
-    dc->SetPen(*(wxThePenList->FindOrCreatePen(
-					       m_configuration->GetColor(TS_SELECTION),
-					       m_configuration->GetDefaultLineWidth(), wxPENSTYLE_SOLID)));
+    {
+      std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+      dc->SetPen(*(wxThePenList->FindOrCreatePen(
+						 m_configuration->GetColor(TS_SELECTION),
+						 m_configuration->GetDefaultLineWidth(), wxPENSTYLE_SOLID)));
+    }
     // window linux, set a pen
-    dc->SetBrush(*(wxTheBrushList->FindOrCreateBrush(
-						     m_configuration->GetColor(TS_SELECTION))));
+    {
+      std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+      dc->SetBrush(*(wxTheBrushList->FindOrCreateBrush(
+						       m_configuration->GetColor(TS_SELECTION))));
+    }
     drawBracket = true;
   } else if (m_cellPointers->m_errorList.Contains(this)) {
+    std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
     dc->SetPen(*wxRED_PEN);
     dc->SetBrush(*wxRED_BRUSH);
     drawBracket = true;
   } else {
     if ((m_cellPointers->m_answerCell) &&
         (m_cellPointers->m_answerCell->GetGroup() == this)) {
+      std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
       dc->SetPen(*wxYELLOW_PEN);
       dc->SetBrush(*wxYELLOW_BRUSH);
       drawBracket = true;
     } else {
+      std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
       dc->SetBrush(m_configuration->GetBackgroundBrush());
       dc->SetPen(*(wxThePenList->FindOrCreatePen(
 						 m_configuration->DefaultBackgroundColor(),
@@ -863,14 +875,19 @@ void GroupCell::DrawBracket(wxDC *dc, wxDC *antialiassingDC) {
     drawBracket = true;
     dc->SetBrush(*wxTRANSPARENT_BRUSH);
     if (m_lastInEvaluationQueue)
-      dc->SetPen(*(wxThePenList->FindOrCreatePen(
+      {
+	std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+	dc->SetPen(*(wxThePenList->FindOrCreatePen(
 						 m_configuration->GetColor(TS_CELL_BRACKET),
 						 2 * m_configuration->GetDefaultLineWidth(), wxPENSTYLE_SOLID)));
+      }
     else
-      dc->SetPen(*(wxThePenList->FindOrCreatePen(
-						 m_configuration->GetColor(TS_CELL_BRACKET),
-						 m_configuration->GetDefaultLineWidth(), wxPENSTYLE_SOLID)));
-
+      {
+	std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+	dc->SetPen(*(wxThePenList->FindOrCreatePen(
+						   m_configuration->GetColor(TS_CELL_BRACKET),
+						   m_configuration->GetDefaultLineWidth(), wxPENSTYLE_SOLID)));
+      }
     wxRect bracketRect = wxRect(
 				m_configuration->GetIndent() - m_configuration->GetCellBracketWidth(),
 				rect.GetTop() - 2, m_configuration->GetCellBracketWidth(),
@@ -882,6 +899,7 @@ void GroupCell::DrawBracket(wxDC *dc, wxDC *antialiassingDC) {
   Cell *editable = GetEditable();
   if (editable != NULL && editable->IsActive()) {
     drawBracket = true;
+    std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
     antialiassingDC->SetPen(*(wxThePenList->FindOrCreatePen(
 						m_configuration->GetColor(TS_ACTIVE_CELL_BRACKET),
 						2 * m_configuration->GetDefaultLineWidth(),
@@ -889,6 +907,7 @@ void GroupCell::DrawBracket(wxDC *dc, wxDC *antialiassingDC) {
     dc->SetBrush(*(wxTheBrushList->FindOrCreateBrush(
 						     m_configuration->GetColor(TS_ACTIVE_CELL_BRACKET)))); // highlight c.
   } else {
+    std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
     antialiassingDC->SetPen(*(wxThePenList->FindOrCreatePen(
 						m_configuration->GetColor(TS_CELL_BRACKET),
 						m_configuration->GetDefaultLineWidth(),

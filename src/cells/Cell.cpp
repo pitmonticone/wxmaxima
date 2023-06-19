@@ -294,8 +294,11 @@ void Cell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     wxRect rect = Cell::CropToUpdateRegion(GetRect());
     if (m_configuration->InUpdateRegion(rect) && !rect.IsEmpty()) {
       wxDC *dc = m_configuration->GetRecalcDC();
-      dc->SetPen(*wxTRANSPARENT_PEN);
-      dc->SetBrush(m_configuration->GetTooltipBrush());
+      {
+	std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+	dc->SetPen(*wxTRANSPARENT_PEN);
+	dc->SetBrush(m_configuration->GetTooltipBrush());
+      }
       dc->DrawRectangle(rect);
     }
   }
@@ -987,6 +990,7 @@ wxColour Cell::GetForegroundColor() const {
 // cppcheck-suppress functionConst
 // Set the pen in device context according to the style of the cell.
 void Cell::SetPen(wxDC *dc, double lineWidth) const {
+  std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
   wxPen pen = *(wxThePenList->FindOrCreatePen(
 					      GetForegroundColor(),
 					      lineWidth * m_configuration->GetDefaultLineWidth(),
@@ -995,6 +999,7 @@ void Cell::SetPen(wxDC *dc, double lineWidth) const {
 }
 
 void Cell::SetBrush(wxDC *dc) const {  
+  std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
   wxBrush brush = *(wxTheBrushList->FindOrCreateBrush(GetForegroundColor()));
   dc->SetBrush(brush);
 }
@@ -1027,6 +1032,7 @@ void Cell::SetTextColor(wxDC *dc) {
       break;
     }
   }
+  std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
   dc->SetTextForeground(color);
 }
 
