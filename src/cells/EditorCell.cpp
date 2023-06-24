@@ -549,7 +549,7 @@ bool EditorCell::IsZoomFactorChanged() const {
 }
 
 bool EditorCell::NeedsRecalculation(AFontSize fontSize) const {
-  return Cell::NeedsRecalculation(fontSize) || m_containsChanges || m_isDirty;
+  return Cell::NeedsRecalculation(fontSize) | m_containsChanges;
 }
 
 void EditorCell::Recalculate(AFontSize fontsize) {
@@ -849,10 +849,15 @@ void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
         // We need to draw some text.
 
         // Grab a pen of the right color.
-	if (lastStyle != textSnippet.GetTextStyle()) {
-	  dc->SetTextForeground(m_configuration->GetColor(textSnippet.GetTextStyle()));
-	  lastStyle = textSnippet.GetTextStyle();
-	}
+        if (textSnippet.IsStyleSet()) {
+          if (lastStyle != textSnippet.GetTextStyle()) {
+            dc->SetTextForeground(m_configuration->GetColor(textSnippet.GetTextStyle()));
+            lastStyle = textSnippet.GetTextStyle();
+          }
+        } else {
+          lastStyle = -1;
+          SetForeground(dc);
+        }
 
         // Draw a char that shows we continue an indentation - if this is
         // needed.
