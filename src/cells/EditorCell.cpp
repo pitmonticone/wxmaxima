@@ -736,21 +736,26 @@ void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
       wxBrush *br;
       wxPen *pen;
       if (GetTextStyle() == TS_TEXT) {
-	if (m_configuration->InUpdateRegion(rect) &&
-	    (m_configuration->EditorBackgroundColor() !=
-	     m_configuration->DefaultBackgroundColor()))
-	  {
-	    std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
-	    br = wxTheBrushList->FindOrCreateBrush(m_configuration->EditorBackgroundColor());
-	    pen = wxThePenList->FindOrCreatePen(m_configuration->EditorBackgroundColor(),
-						0, wxPENSTYLE_SOLID);
-	    dc->SetBrush(*br);
-	    dc->SetPen(*pen);
-	  }
-	auto width = m_configuration->GetCanvasSize().GetWidth() - rect.x;
-	rect.SetWidth(width);
-        dc->DrawRectangle(CropToUpdateRegion(rect));
+	std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+        br = wxTheBrushList->FindOrCreateBrush(m_configuration->EditorBackgroundColor());
+        pen = wxThePenList->FindOrCreatePen(m_configuration->EditorBackgroundColor(),
+					    0, wxPENSTYLE_SOLID);
+      } else {
+	std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+        br = wxTheBrushList->FindOrCreateBrush(m_configuration->DefaultBackgroundColor());
+        pen = wxThePenList->FindOrCreatePen(m_configuration->DefaultBackgroundColor(),
+					    0, wxPENSTYLE_SOLID);
       }
+      {
+	std::lock_guard<std::mutex> guard(Configuration::m_refcount_mutex);
+	dc->SetBrush(*br);
+	dc->SetPen(*pen);
+      }
+      auto width = m_configuration->GetCanvasSize().GetWidth() - rect.x;
+      rect.SetWidth(width);
+      if (m_configuration->InUpdateRegion(rect) &&
+          (br->GetColour() != m_configuration->DefaultBackgroundColor()))
+        dc->DrawRectangle(CropToUpdateRegion(rect));
     }
     SetFont(dc);
 
