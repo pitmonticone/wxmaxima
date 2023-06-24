@@ -553,66 +553,64 @@ bool EditorCell::NeedsRecalculation(AFontSize fontSize) const {
 }
 
 void EditorCell::Recalculate(AFontSize fontsize) {
-  if(NeedsRecalculation(fontsize))
-    {
-      Cell::Recalculate(fontsize);
-      m_isDirty = false;
-      if (IsZoomFactorChanged()) {
-	m_widths.clear();
-	m_lastZoomFactor = m_configuration->GetZoomFactor();
-      }
-      StyleText();
-      SetFont(m_configuration->GetRecalcDC());
+  m_isDirty = false;
+  Cell::Recalculate(fontsize);
+  if (IsZoomFactorChanged()) {
+    m_widths.clear();
+    m_lastZoomFactor = m_configuration->GetZoomFactor();
+  }
+  StyleText();
+  SetFont(m_configuration->GetRecalcDC());
 
-      // Measure the text height using characters that might extend below or above
-      // the region ordinary characters move in.
-      int charWidth;
-      m_configuration->GetRecalcDC()->GetTextExtent(wxS("äXÄgy"), &charWidth, &m_charHeight);
+  // Measure the text height using characters that might extend below or above
+  // the region ordinary characters move in.
+  int charWidth;
+  m_configuration->GetRecalcDC()->GetTextExtent(wxS("äXÄgy"), &charWidth, &m_charHeight);
 
-      // We want a little bit of vertical space between two text lines (and between
-      // two labels).
-      m_charHeight += 2 * MC_TEXT_PADDING;
-      int width = 0, tokenwidth, tokenheight, linewidth = 0;
+  // We want a little bit of vertical space between two text lines (and between
+  // two labels).
+  m_charHeight += 2 * MC_TEXT_PADDING;
+  int width = 0, tokenwidth, tokenheight, linewidth = 0;
 
+  m_numberOfLines = 1;
+
+  for (auto &textSnippet : m_styledText) {
+    if ((textSnippet.GetText().StartsWith(wxS('\n')) ||
+         (textSnippet.GetText().StartsWith(wxS('\r'))))) {
+      m_numberOfLines++;
+      linewidth = textSnippet.GetIndentPixels();
+    } else {
+      m_configuration->GetRecalcDC()->GetTextExtent(textSnippet.GetText(), &tokenwidth, &tokenheight);
+      textSnippet.SetWidth(tokenwidth);
+      linewidth += tokenwidth;
+      width = wxMax(width, linewidth);
+    }
+
+    // Handle folding
+    if (m_firstLineOnly)
       m_numberOfLines = 1;
 
-      for (auto &textSnippet : m_styledText) {
-	if ((textSnippet.GetText().StartsWith(wxS('\n')) ||
-	     (textSnippet.GetText().StartsWith(wxS('\r'))))) {
-	  m_numberOfLines++;
-	  linewidth = textSnippet.GetIndentPixels();
-	} else {
-	  m_configuration->GetRecalcDC()->GetTextExtent(textSnippet.GetText(), &tokenwidth, &tokenheight);
-	  textSnippet.SetWidth(tokenwidth);
-	  linewidth += tokenwidth;
-	  width = wxMax(width, linewidth);
-	}
+    // Assign empty lines a minimum width
+    if (m_text == wxEmptyString)
+      width = charWidth;
 
-	// Handle folding
-	if (m_firstLineOnly)
-	  m_numberOfLines = 1;
+    // Add a line border
+    m_width = width + 2 * Scale_Px(2);
 
-	// Assign empty lines a minimum width
-	if (m_text == wxEmptyString)
-	  width = charWidth;
+    // Calculate the cell height
+    if (m_firstLineOnly)
+      m_height = m_charHeight + 2 * Scale_Px(2);
+    else
+      m_height = m_numberOfLines * m_charHeight + 2 * Scale_Px(2);
 
-	// Add a line border
-	m_width = width + 2 * Scale_Px(2);
+    if (m_height < m_charHeight + 2 * Scale_Px(2))
+      m_height = (m_charHeight) + 2 * Scale_Px(2);
 
-	// Calculate the cell height
-	if (m_firstLineOnly)
-	  m_height = m_charHeight + 2 * Scale_Px(2);
-	else
-	  m_height = m_numberOfLines * m_charHeight + 2 * Scale_Px(2);
-
-	if (m_height < m_charHeight + 2 * Scale_Px(2))
-	  m_height = (m_charHeight) + 2 * Scale_Px(2);
-
-	// The center lies in the middle of the 1st line
-	m_center = m_charHeight / 2;
-      }
-      m_containsChanges = false;
-    }
+    // The center lies in the middle of the 1st line
+    m_center = m_charHeight / 2;
+    Cell::Recalculate(fontsize);
+  }
+  m_containsChanges = false;
 }
 
 wxString EditorCell::ToHTML() const {
