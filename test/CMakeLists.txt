@@ -126,6 +126,7 @@ foreach(f ${DEMO_FILES})
 	  add_test(
 	      NAME ${f}
     	      COMMAND wxmaxima --debug --logtostderr --pipe --batch automatic_test_files/${f}.wxm)
+	  set_tests_properties(${f} DEPENDS wxmaxima_performance)
 endforeach()
 
 add_test(
@@ -279,6 +280,7 @@ add_test(
     NAME wxmaxima_batch_emptyFile
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/automatic_test_files
     COMMAND wxmaxima --debug --logtostderr --pipe --batch empty_file.wxm)
+set_tests_properties(wxmaxima_batch_emptyFile DEPENDS wxmaxima_performance)
 
 add_test(
     NAME wxmaxima_performance
@@ -289,27 +291,32 @@ add_test(
     NAME wxmaxima_batch_textcell
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/automatic_test_files
     COMMAND wxmaxima --debug --logtostderr --pipe --batch textcells.wxm)
+set_tests_properties(wxmaxima_batch_textcell DEPENDS wxmaxima_performance)
 
 add_test(
     NAME wxmaxima_batch_foreign_characters
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/automatic_test_files
     COMMAND wxmaxima --debug --logtostderr --pipe --batch foreign-characters.wxm)
+set_tests_properties(wxmaxima_batch_foreign_characters DEPENDS wxmaxima_performance)
 
 add_test(
     NAME wxmaxima_load_symbol
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/automatic_test_files
     COMMAND wxmaxima --debug --logtostderr --pipe --batch load_string.wxm)
+set_tests_properties(wxmaxima_load_symbol DEPENDS wxmaxima_performance)
 
 add_test(
     NAME wxmaxima_version_string
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/automatic_test_files
     COMMAND wxmaxima --debug --logtostderr --pipe --version)
 set_tests_properties(wxmaxima_version_string PROPERTIES  PASS_REGULAR_EXPRESSION "wxMaxima ${VERSION}.*")
+set_tests_properties(wxmaxima_version_string DEPENDS wxmaxima_performance)
 
 add_test(
     NAME wxmaxima_version_returncode
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/automatic_test_files
     COMMAND wxmaxima --debug --logtostderr --pipe --version)
+set_tests_properties(wxmaxima_version_returncode DEPENDS wxmaxima_performance)
 
 #add_test(
 #    NAME maxima_lisp_switch
