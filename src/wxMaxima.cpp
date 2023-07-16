@@ -2031,6 +2031,7 @@ TextCell *wxMaxima::DoRawConsoleAppend(wxString s, CellType type,
           cell->SetBigSkip(false);
 
         auto breakLine = static_cast<bool>(tree);
+        tree.Append(std::move(owned));
         if (breakLine)
           tree.GetLastAppended()->ForceBreakLine(true);
       }
