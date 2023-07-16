@@ -2002,6 +2002,9 @@ TextCell *wxMaxima::DoRawConsoleAppend(wxString s, CellType type,
       if (s.IsEmpty()) {
         incompleteTextCell->GetGroup()->ResetSize();
         incompleteTextCell->GetGroup()->Recalculate();
+	CellListBuilder<Cell> tree;
+	tree.Append(std::move(incompleteTextCell));
+	m_worksheet->InsertLine(std::move(tree), true);
         return incompleteTextCell;
       }
     }
@@ -2028,7 +2031,6 @@ TextCell *wxMaxima::DoRawConsoleAppend(wxString s, CellType type,
           cell->SetBigSkip(false);
 
         auto breakLine = static_cast<bool>(tree);
-        tree.Append(std::move(owned));
         if (breakLine)
           tree.GetLastAppended()->ForceBreakLine(true);
       }
@@ -2690,8 +2692,6 @@ void wxMaxima::OnProcessEvent(wxProcessEvent &event) {
   if(event.GetPid() != m_pid)
     return;
   m_process = NULL;
-  m_maximaStdout = NULL;
-  m_maximaStderr = NULL;
   m_pid = -1;
   wxLogMessage(_("Maxima process (pid %li) has terminated with exit code %li.\n"),
                (long)event.GetPid(), (long)event.GetExitCode());
@@ -2721,6 +2721,8 @@ void wxMaxima::OnProcessEvent(wxProcessEvent &event) {
     if (!o.IsEmpty())
       wxLogMessage(_("Last message from maxima's stderr: %s"), o.utf8_str());
   }
+  m_maximaStdout = NULL;
+  m_maximaStderr = NULL;
   m_statusBar->NetworkStatus(StatusBar::offline);
   if (!m_closing) {
     StatusText(_("Maxima process terminated unexpectedly."));
