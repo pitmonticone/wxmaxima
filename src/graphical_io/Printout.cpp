@@ -154,61 +154,37 @@ void Printout::BreakPages() {
     return;
   wxSize canvasSize = m_configuration.GetCanvasSize();
 
+  std::vector <Cell*> breakingPoints;
+  for (GroupCell &gr : OnList(m_tree.get())) {
+    // We can introduce a break after the input part of any group cell.
+    if(gr.GetPrompt())
+      m_pages.push_back(gr.GetPrompt());
 
+    // We can introduce a break after each line of output of any
+    // group cell.
+    Cell *out = gr.GetOutput();
+    if(out)
+      {
+	breakingPoints.push_back(gr.GetOutput());
+	while(out)
+	  {
+	    if((out->BreakLineHere()) || (out->GetNext() == NULL))
+	      m_pages.push_back(out);
+	  }	    
+      }
+  }
+    
   // The 1st page starts at the beginning of the document
   GroupCell *group = m_tree.get();
   m_pages.push_back(group);
 
+  wxCoord pageStart = 0;
   // Now see where the next pages should start
-  for (GroupCell &gr : OnList(m_tree.get())) {
-    wxCoord pageStart = m_pages[m_pages.size() - 1]->GetRect(true).GetTop();
-    // Handle pagebreak cells
-    if ((gr.GetGroupType() == GC_TYPE_PAGEBREAK) && (gr.GetNext())) {
-      m_pages.push_back(gr.GetNext());
-      continue;
-    }
-
-    wxCoord pageHeight = gr.GetRect(true).GetBottom() - pageStart;
-    // Add complete GroupCells as long as they fit on the page
-    if ((pageHeight > canvasSize.y) ||
-        (&gr == m_pages[m_pages.size() - 1])) {
-      if (!gr.GetOutput()) {
-        if (((pageHeight > canvasSize.y)))
-          m_pages.push_back(&gr);
-      } else {
-        // Drawing a cell causes its output positions to be calculated
-        gr.Recalculate();
-        gr.Draw(gr.GetCurrentPoint(), GetDC(), GetDC());
-
-        if ((gr.GetOutput() != NULL) &&
-            (gr.GetOutput()->GetRect(true).GetTop() - pageStart <
-             canvasSize.y)) {
-          wxLogMessage("Printout: Page %li: Adding a partial GroupCell!",
-		       (long)m_pages.size());
-          {
-            Cell *out = gr.GetOutput();
-            if (out->GetRect(true).GetBottom() - pageStart > canvasSize.y) {
-              wxLogMessage("Printout: Page %li: Page break after input.",
-			   (long)m_pages.size());
-              m_pages.push_back(gr.GetOutput());
-            }
-            while (out) {
-              pageStart = m_pages[m_pages.size() - 1]->GetRect(true).GetTop();
-              if (out->GetRect(true).GetBottom() - pageStart >
-                  canvasSize.y) {
-                wxLogMessage("Printout: Page %li: Page break in the output",
-					      (long)m_pages.size());
-                m_pages.push_back(out);
-              }
-              out = out->GetNextToDraw();
-              while (out && (!out->BreakLineHere()))
-                out = out->GetNextToDraw();
-            }
-          }
-        } else
-          m_pages.push_back(&gr);
-      }
-    }
+  for (const auto &i : breakingPoints) {
+    wxCoord pageStart = m_pages[m_pages.size() - 1]->GetRect(true).GetTop(); 
+    wxCoord pageHeight = i->GetRect(true).GetBottom() - pageStart;
+    if(pageHeight > canvasSize.y)
+      m_pages.push_back(i);
   }
 }
 
