@@ -156,20 +156,22 @@ void Printout::BreakPages() {
 
   std::vector <Cell*> breakingPoints;
   for (GroupCell &gr : OnList(m_tree.get())) {
+    // Drawing a GroupCell makes it calculate the position of its output cells.
+    gr.Draw(gr.GetCurrentPoint(), GetDC(), GetDC());
     // We can introduce a break after the input part of any group cell.
     if(gr.GetPrompt())
-      m_pages.push_back(gr.GetPrompt());
+      breakingPoints.push_back(gr.GetPrompt());
 
     // We can introduce a break after each line of output of any
     // group cell.
     Cell *out = gr.GetOutput();
     if(out)
       {
-	breakingPoints.push_back(gr.GetOutput());
 	while(out)
 	  {
 	    if((out->BreakLineHere()) || (out->GetNext() == NULL))
-	      m_pages.push_back(out);
+	      breakingPoints.push_back(out);
+	    out = out->GetNext();
 	  }	    
       }
   }
@@ -178,13 +180,19 @@ void Printout::BreakPages() {
   GroupCell *group = m_tree.get();
   m_pages.push_back(group);
 
-  wxCoord pageStart = 0;
   // Now see where the next pages should start
+  wxCoord pageStart = 0;
   for (const auto &i : breakingPoints) {
-    wxCoord pageStart = m_pages[m_pages.size() - 1]->GetRect(true).GetTop(); 
+    wxCoord pageStart = m_pages[m_pages.size() - 1]->GetRect(true).GetBottom(); 
     wxCoord pageHeight = i->GetRect(true).GetBottom() - pageStart;
+    wxLogMessage(_("Printout: PageStart=%li, PageHeight=%li, canvasSize=%li"),
+		 (long) pageStart,
+		 (long) pageHeight,
+		 (long) canvasSize.y);
     if(pageHeight > canvasSize.y)
-      m_pages.push_back(i);
+      {
+	m_pages.push_back(i);
+      }
   }
 }
 
