@@ -178,9 +178,12 @@ void Printout::BreakPages() {
 
   // Now see where the next pages should start
   wxCoord pageStart = 0;
+  
   for (const auto &i : breakingPoints) {
     wxCoord pageStart = m_pages[m_pages.size() - 1]->GetRect(true).GetBottom(); 
     wxCoord pageHeight = i->GetRect(true).GetBottom() - pageStart;
+    if(i->GetNext())
+      pageHeight = i->GetNext()->GetRect(true).GetBottom() - pageStart;
     wxLogMessage(_("Printout: PageStart=%li, PageHeight=%li, canvasSize=%li"),
 		 (long) pageStart,
 		 (long) pageHeight,
