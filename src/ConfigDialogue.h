@@ -144,7 +144,7 @@ private:
   typedef std::unordered_map <wxString, long> Languages;
 #else
   WX_DECLARE_STRING_HASH_MAP(wxString, StringHash);
-  WX_DECLARE_STRING_HASH_MAP(kong, Languages);
+  WX_DECLARE_STRING_HASH_MAP(long, Languages);
 #endif
 
   Languages m_languages;
