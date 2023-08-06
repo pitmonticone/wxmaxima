@@ -365,7 +365,7 @@ public:
   //! Reset the data when the input size changes
   void InputHeightChanged();
 
-#if wxCHECK_VERSION(3, 3, 0)
+#if wxCHECK_VERSION(3, 3, 0) || wxUSE_STL
   typedef std::unordered_map <wxString, wxString> StringHash;
 #else
   WX_DECLARE_STRING_HASH_MAP(wxString, StringHash);
