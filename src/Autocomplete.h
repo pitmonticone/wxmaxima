@@ -53,7 +53,7 @@
 */
 class AutoComplete
 {
-#if wxCHECK_VERSION(3, 3, 0)
+#if wxCHECK_VERSION(3, 3, 0) || wxUSE_STL
   typedef std::unordered_map <wxString, int> WorksheetWords;
 #else
   WX_DECLARE_STRING_HASH_MAP(int, WorksheetWords);

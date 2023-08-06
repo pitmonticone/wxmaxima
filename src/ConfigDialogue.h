@@ -47,6 +47,7 @@ extern unsigned char view_refresh_svg_gz[];
 #include <wx/imaglist.h>
 #include <wx/bookctrl.h>
 #include <wx/artprov.h>
+#include <unordered_map>
 
 #ifndef CONFIGDIALOGUE_H
 #define CONFIGDIALOGUE_H
@@ -138,8 +139,14 @@ private:
   std::unique_ptr<Configuration> m_configuration;
   Worksheet *m_sampleWorksheet = NULL;
 
+#if wxCHECK_VERSION(3, 3, 0) || wxUSE_STL
+  typedef std::unordered_map <wxString, wxString> StringHash;
+  typedef std::unordered_map <wxString, long> Languages;
+#else
   WX_DECLARE_STRING_HASH_MAP(wxString, StringHash);
-  WX_DECLARE_STRING_HASH_MAP(long, Languages);
+  WX_DECLARE_STRING_HASH_MAP(kong, Languages);
+#endif
+
   Languages m_languages;
   /*! TheSample text that is shown by the style selector.
 
