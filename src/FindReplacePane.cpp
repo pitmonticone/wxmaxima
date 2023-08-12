@@ -31,7 +31,7 @@
 #include <wx/button.h>
 #include <wx/stattext.h>
 
-FindReplacePane::FindReplacePane(wxWindow *parent, wxFindReplaceData *data)
+FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   : wxPanel(parent, -1) {
   m_active = true;
   m_findReplaceData = data;
@@ -71,15 +71,22 @@ FindReplacePane::FindReplacePane(wxWindow *parent, wxFindReplaceData *data)
                            NULL, this);
   grid_sizer->Add(m_replaceButton, wxSizerFlags().Expand().Border(wxALL, 5));
 
-  grid_sizer->Add(new wxStaticText(this, -1, _("Direction:")),
-                  wxSizerFlags().Right().Center().Border(wxALL, 5));
+  grid_sizer->Add(20,20);
 
-  wxBoxSizer *fbbox = new wxBoxSizer(wxHORIZONTAL);
+  wxSizer *fbbox = new wxGridSizer(2);
   m_forward = new wxRadioButton(this, -1, _("Up"), wxDefaultPosition,
                                 wxDefaultSize, wxRB_GROUP);
   fbbox->Add(m_forward, wxSizerFlags().Expand().Border(wxALL, 5));
   m_backwards = new wxRadioButton(this, -1, _("Down"));
   fbbox->Add(m_backwards, wxSizerFlags().Expand().Border(wxALL, 5));
+  m_regexSearch = new wxRadioButton(this, -1, _("Regex"), wxDefaultPosition,
+                                wxDefaultSize, wxRB_GROUP);
+  fbbox->Add(m_forward, wxSizerFlags().Expand().Border(wxALL, 5));
+  m_simpleSearch = new wxRadioButton(this, -1, _("Simple"));
+  fbbox->Add(m_backwards, wxSizerFlags().Expand().Border(wxALL, 5));
+
+  m_regexSearch->SetValue((data->GetRegexSearch()));
+  m_simpleSearch->SetValue(!(data->GetRegexSearch()));
 
   m_forward->SetValue(!(data->GetFlags() & wxFR_DOWN));
   m_backwards->SetValue(!!(data->GetFlags() & wxFR_DOWN));
@@ -116,6 +123,12 @@ FindReplacePane::FindReplacePane(wxWindow *parent, wxFindReplaceData *data)
   m_activateDuringConstruction = true;
   Connect(wxEVT_CHAR_HOOK, wxKeyEventHandler(FindReplacePane::OnKeyDown), NULL,
           this);
+}
+
+FindReplacePane::FindReplaceData::FindReplaceData() :
+  wxFindReplaceData(),
+  m_regexSearch(false)
+{
 }
 
 void FindReplacePane::SetFindString(wxString strng) {

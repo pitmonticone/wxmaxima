@@ -329,8 +329,11 @@ wxMaxima::wxMaxima(wxWindow *parent, int id,
   m_oldFindFlags = 0;
   m_worksheet->m_currentFile = wxEmptyString;
   int findFlags = wxFR_DOWN | wxFR_MATCHCASE;
-  wxConfig::Get()->Read(wxS("findFlags"), &findFlags);
+  wxConfig::Get()->Read(wxS("Find/Flags"), &findFlags);
   m_findData.SetFlags(findFlags);
+  bool findRegex = false;
+  wxConfig::Get()->Read(wxS("Find/RegexSearch"), &findRegex);
+  m_findData.SetRegexSearch(findRegex);
   m_worksheet->SetFocus();
   m_worksheet->m_keyboardInactiveTimer.SetOwner(this,
                                                 KEYBOARD_INACTIVITY_TIMER_ID);
@@ -1741,6 +1744,9 @@ void wxMaxima::StartAutoSaveTimer() {
 }
 
 wxMaxima::~wxMaxima() {
+  wxConfig::Get()->Write(wxS("Find/Flags"), m_findData.GetFlags());
+  wxConfig::Get()->Write(wxS("Find/RegexSearch"), m_findData.GetRegexSearch());
+
   KillMaxima(false);
   DelistTopLevelWindow(this);
 
