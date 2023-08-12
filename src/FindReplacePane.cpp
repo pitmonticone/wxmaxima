@@ -81,9 +81,9 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   fbbox->Add(m_backwards, wxSizerFlags().Expand().Border(wxALL, 5));
   m_regexSearch = new wxRadioButton(this, -1, _("Regex"), wxDefaultPosition,
                                 wxDefaultSize, wxRB_GROUP);
-  fbbox->Add(m_forward, wxSizerFlags().Expand().Border(wxALL, 5));
+  fbbox->Add(m_regexSearch, wxSizerFlags().Expand().Border(wxALL, 5));
   m_simpleSearch = new wxRadioButton(this, -1, _("Simple"));
-  fbbox->Add(m_backwards, wxSizerFlags().Expand().Border(wxALL, 5));
+  fbbox->Add(m_simpleSearch, wxSizerFlags().Expand().Border(wxALL, 5));
 
   m_regexSearch->SetValue((data->GetRegexSearch()));
   m_simpleSearch->SetValue(!(data->GetRegexSearch()));
