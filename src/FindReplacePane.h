@@ -98,6 +98,8 @@ protected:
 
   void OnDirectionChange(wxCommandEvent &event);
 
+  void OnRegexSimpleChange(wxCommandEvent &event);
+
   void OnMatchCase(wxCommandEvent &event);
 
   void OnKeyDown(wxKeyEvent &event);

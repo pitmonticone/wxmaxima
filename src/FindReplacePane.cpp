@@ -30,6 +30,7 @@
 #include "EditorCell.h"
 #include <wx/button.h>
 #include <wx/stattext.h>
+#include <wx/regex.h>
 
 FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   : wxPanel(parent, -1) {
@@ -86,7 +87,13 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   fbbox->Add(m_simpleSearch, wxSizerFlags().Expand().Border(wxALL, 5));
 
   m_regexSearch->SetValue((data->GetRegexSearch()));
+  m_regexSearch->Connect(wxEVT_RADIOBUTTON,
+                     wxCommandEventHandler(FindReplacePane::OnDirectionChange),
+                     NULL, this);
   m_simpleSearch->SetValue(!(data->GetRegexSearch()));
+  m_simpleSearch->Connect(wxEVT_RADIOBUTTON,
+                     wxCommandEventHandler(FindReplacePane::OnDirectionChange),
+                     NULL, this);
 
   m_forward->SetValue(!(data->GetFlags() & wxFR_DOWN));
   m_backwards->SetValue(!!(data->GetFlags() & wxFR_DOWN));
@@ -169,6 +176,12 @@ void FindReplacePane::OnDirectionChange(wxCommandEvent &event) {
   wxConfig::Get()->Write(wxS("findFlags"), m_findReplaceData->GetFlags());
 }
 
+void FindReplacePane::OnRegexSimpleChange(wxCommandEvent &event){
+  event.Skip();
+  m_findReplaceData->SetRegexSearch(m_regexSearch->GetValue());
+}
+
+
 void FindReplacePane::OnMatchCase(wxCommandEvent &event) {
   m_findReplaceData->SetFlags(
 			      (m_findReplaceData->GetFlags() & (~wxFR_MATCHCASE)) |
@@ -190,8 +203,20 @@ void FindReplacePane::OnActivate(wxActivateEvent &event) {
   m_active = true;
 }
 
-void FindReplacePane::OnFindStringChange(wxCommandEvent &WXUNUSED(event)) {
+void FindReplacePane::OnFindStringChange(wxCommandEvent &event) {
+  event.Skip();
   m_findReplaceData->SetFindString(m_searchText->GetValue());
+  if(m_findReplaceData->GetRegexSearch())
+    {
+      wxRegEx test(m_searchText->GetValue());
+      if(test.IsValid())
+	m_searchText->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT));
+      else
+	m_searchText->SetForegroundColour(wxColor(255, 165, 0));
+    }
+  else
+    m_searchText->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT));
+  
 }
 
 void FindReplacePane::OnReplaceStringChange(wxCommandEvent &WXUNUSED(event)) {
