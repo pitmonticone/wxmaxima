@@ -43,6 +43,7 @@
 #include "ResolutionChooser.h"
 #include "SVGout.h"
 #include "Version.h"
+#include "RegexSearch.h"
 #include "WXMformat.h"
 #include "levenshtein/levenshtein.h"
 #include "wxMaxima.h"

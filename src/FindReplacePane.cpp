@@ -88,12 +88,12 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
 
   m_regexSearch->SetValue((data->GetRegexSearch()));
   m_regexSearch->Connect(wxEVT_RADIOBUTTON,
-                     wxCommandEventHandler(FindReplacePane::OnDirectionChange),
-                     NULL, this);
+			 wxCommandEventHandler(FindReplacePane::OnRegexSimpleChange),
+			 NULL, this);
   m_simpleSearch->SetValue(!(data->GetRegexSearch()));
   m_simpleSearch->Connect(wxEVT_RADIOBUTTON,
-                     wxCommandEventHandler(FindReplacePane::OnDirectionChange),
-                     NULL, this);
+			  wxCommandEventHandler(FindReplacePane::OnRegexSimpleChange),
+			  NULL, this);
 
   m_forward->SetValue(!(data->GetFlags() & wxFR_DOWN));
   m_backwards->SetValue(!!(data->GetFlags() & wxFR_DOWN));
@@ -208,6 +208,7 @@ void FindReplacePane::OnFindStringChange(wxCommandEvent &event) {
   m_findReplaceData->SetFindString(m_searchText->GetValue());
   if(m_findReplaceData->GetRegexSearch())
     {
+      wxLogNull suppressor;
       wxRegEx test(m_searchText->GetValue());
       if(test.IsValid())
 	m_searchText->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOWTEXT));
