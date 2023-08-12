@@ -43,7 +43,6 @@
 #include "ResolutionChooser.h"
 #include "SVGout.h"
 #include "Version.h"
-#include "RegexSearch.h"
 #include "WXMformat.h"
 #include "levenshtein/levenshtein.h"
 #include "wxMaxima.h"
@@ -7463,17 +7462,17 @@ wxString Worksheet::GetOutputAboveCaret() {
 }
 
 bool Worksheet::FindIncremental(const wxString &str, bool down,
-                                bool ignoreCase) {
+                                bool ignoreCase, bool regEx) {
   if (SearchStart()) {
     SetActiveCell(SearchStart());
     SearchStart()->CaretToPosition(IndexSearchStartedAt());
   }
 
-  return (!str.empty()) ? FindNext(str, down, ignoreCase, false) : true;
+  return (!str.empty()) ? FindNext(str, down, ignoreCase, regEx, false) : true;
 }
 
 bool Worksheet::FindNext(const wxString &str, bool down, bool ignoreCase,
-                         bool warn) {
+                         bool regEx, bool warn) {
   if (!GetTree())
     return false;
 
@@ -7522,7 +7521,7 @@ bool Worksheet::FindNext(const wxString &str, bool down, bool ignoreCase,
     EditorCell *editor = pos->GetEditable();
 
     if (editor) {
-      bool found = editor->FindNext(str, down, ignoreCase);
+      bool found = editor->FindNext(str, down, ignoreCase, regEx);
 
       if (found) {
         int strt, end;

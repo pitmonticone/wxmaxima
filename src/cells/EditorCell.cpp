@@ -40,6 +40,7 @@
 #include <wx/clipbrd.h>
 #include <wx/regex.h>
 #include <wx/tokenzr.h>
+#include "RegexSearch.h"
 
 EditorCell::EditorCell(GroupCell *group, Configuration *config,
                        const wxString &text)
@@ -3467,7 +3468,7 @@ int EditorCell::ReplaceAll(wxString oldString, const wxString &newString,
 }
 
 bool EditorCell::FindNext(wxString str, const bool &down,
-                          const bool &ignoreCase) {
+                          const bool &ignoreCase, const bool &regEx) {
   // If the search string is empty we prepare everything for a new search
   if (str.IsEmpty()) {
     m_selectionStart = m_selectionEnd = -1;
@@ -3528,19 +3529,37 @@ bool EditorCell::FindNext(wxString str, const bool &down,
     }
   }
   int strStart = wxNOT_FOUND;
-  if (down)
-    strStart = text.find(str, start);
+  if(regEx)
+    {
+      RegexSearch regexSearch(str);
+      RegexSearch::Match match;
+      if (down)
+	match =  regexSearch.FindNext(text, start);
+      else
+	match =  regexSearch.FindNext_Reverse(text, start);
+      if(match.GetStart() != wxNOT_FOUND)
+	{
+	  m_positionOfCaret = match.GetStart();
+	  SetSelection(match.GetStart(), match.GetEnd());
+	  return true;
+	}
+    }
   else
-    strStart = text.rfind(str, start);
-
-  if (strStart != wxNOT_FOUND) {
-    if (down)
-      m_positionOfCaret = strStart;
-    else
-      m_positionOfCaret = strStart + str.Length();
-    SetSelection(strStart, strStart + str.Length());
-    return true;
-  }
+    {
+      if (down)
+	strStart = text.find(str, start);
+      else
+	strStart = text.rfind(str, start);
+      
+      if (strStart != wxNOT_FOUND) {
+	if (down)
+	  m_positionOfCaret = strStart;
+	else
+	  m_positionOfCaret = strStart + str.Length();
+	SetSelection(strStart, strStart + str.Length());
+	return true;
+      }
+    }
   if (IsActive()) {
     if (down) {
       m_positionOfCaret = 0;

@@ -377,7 +377,7 @@ public:
     - true: Case-insensitive search
     - false: Case-sensitive search
   */
-  bool FindNext(wxString str, const bool &down, const bool &ignoreCase);
+  bool FindNext(wxString str, const bool &down, const bool &ignoreCase, const bool &regEx);
 
   bool IsSelectionChanged() const { return m_selectionChanged; }
 

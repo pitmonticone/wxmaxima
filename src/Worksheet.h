@@ -1443,13 +1443,13 @@ public:
     Used by the find dialog.
     \todo Keep a list of positions the last few letters were found at?
   */
-  bool FindIncremental(const wxString &str, bool down, bool ignoreCase);
+  bool FindIncremental(const wxString &str, bool down, bool ignoreCase, bool regEx);
 
   /*! Find the next occurrence of a string
 
     Used by the find dialog.
   */
-  bool FindNext(const wxString &str, bool down, bool ignoreCase, bool warn = true);
+  bool FindNext(const wxString &str, bool down, bool ignoreCase, bool regEx, bool warn = true);
 
   /*! Replace the current occurrence of a string
 
