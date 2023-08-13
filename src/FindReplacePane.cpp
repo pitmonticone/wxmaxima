@@ -36,15 +36,17 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   : wxPanel(parent, -1) {
   m_active = true;
   m_findReplaceData = data;
-  wxFlexGridSizer *grid_sizer = new wxFlexGridSizer(3, 1, 1);
+  wxBoxSizer *main = new wxBoxSizer(wxVERTICAL);
+  wxBoxSizer *top_sizer = new wxBoxSizer(wxHORIZONTAL);
+  wxBoxSizer *button_sizer = new wxBoxSizer(wxVERTICAL);
+  wxFlexGridSizer *grid_sizer = new wxFlexGridSizer(2);
   grid_sizer->SetFlexibleDirection(wxHORIZONTAL);
   grid_sizer->AddGrowableCol(0, 0);
   grid_sizer->AddGrowableCol(1, 1);
-  grid_sizer->AddGrowableCol(2, 0);
 
   grid_sizer->Add(new wxStaticText(this, -1, _("Find:")),
                   wxSizerFlags().Right().Center().Border(wxALL, 5));
-
+  
   m_searchText = new wxTextCtrl(this, -1, data->GetFindString());
   m_searchText->Connect(
 			wxEVT_TEXT, wxCommandEventHandler(FindReplacePane::OnFindStringChange),
@@ -52,7 +54,7 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   grid_sizer->Add(m_searchText, wxSizerFlags().Expand().Border(wxALL, 5));
 
   m_searchButton = new wxButton(this, wxID_FIND);
-  grid_sizer->Add(m_searchButton, wxSizerFlags().Expand().Border(wxALL, 5));
+  button_sizer->Add(m_searchButton, wxSizerFlags().Expand().Border(wxALL, 5));
   m_searchButton->Connect(wxEVT_BUTTON,
                           wxCommandEventHandler(FindReplacePane::OnSearch),
                           NULL, this);
@@ -70,7 +72,7 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   m_replaceButton->Connect(wxEVT_BUTTON,
                            wxCommandEventHandler(FindReplacePane::OnReplace),
                            NULL, this);
-  grid_sizer->Add(m_replaceButton, wxSizerFlags().Expand().Border(wxALL, 5));
+  button_sizer->Add(m_replaceButton, wxSizerFlags().Expand().Border(wxALL, 5));
 
   grid_sizer->Add(20,20);
 
@@ -107,12 +109,14 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   grid_sizer->Add(fbbox, wxSizerFlags().Expand());
 
   m_replaceAllButton = new wxButton(this, 1, _("Replace All"));
-  grid_sizer->Add(m_replaceAllButton, wxSizerFlags().Expand().Border(wxALL, 5));
+  button_sizer->Add(m_replaceAllButton, wxSizerFlags().Expand().Border(wxALL, 5));
   m_replaceAllButton->Connect(
 			      wxEVT_BUTTON, wxCommandEventHandler(FindReplacePane::OnReplaceAll), NULL,
 			      this);
 
   grid_sizer->AddSpacer(0);
+  top_sizer->Add(grid_sizer, wxSizerFlags().Expand());
+  top_sizer->Add(button_sizer, wxSizerFlags());
 
   m_matchCase = new wxCheckBox(this, -1, _("Match Case"));
   m_matchCase->SetValue(!!(data->GetFlags() & wxFR_MATCHCASE));
@@ -124,7 +128,7 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   // If I press <tab> in the search text box I want to arrive in the
   // replacement text box immediately.
   m_replaceText->MoveAfterInTabOrder(m_searchText);
-  this->SetSizerAndFit(grid_sizer);
+  this->SetSizerAndFit(top_sizer);
   Connect(wxEVT_ACTIVATE, wxActivateEventHandler(FindReplacePane::OnActivate),
 	  NULL, this);
   m_activateDuringConstruction = true;

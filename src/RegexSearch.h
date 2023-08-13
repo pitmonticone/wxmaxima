@@ -55,8 +55,8 @@ public:
   ~RegexSearch();
   Match FindNext(wxString string, size_t start);
   Match FindNext_Reverse(wxString string, size_t start);
-  Match Replace(wxString string, size_t start, wxString replacement);
-  Match Replace_Reverse(wxString string, size_t start, wxString replacement);
+  Match Replace(wxString *string, size_t start, wxString replacement);
+  Match Replace_Reverse(wxString *string, size_t start, wxString replacement);
 };
 
 #endif // REGEXSEARCH_H
