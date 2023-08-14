@@ -3420,50 +3420,68 @@ bool EditorCell::CheckChanges() {
 }
 
 int EditorCell::ReplaceAll(wxString oldString, const wxString &newString,
-                           bool ignoreCase) {
+                           bool ignoreCase, const bool &regexSearch) {
   if (oldString == wxEmptyString)
     return 0;
 
   SaveValue();
   wxString newText;
-  int count = 0;
-  if (!ignoreCase) {
-    newText = m_text;
-    newText.Replace(wxS("\r"), wxS(" "));
-    count = newText.Replace(oldString, newString);
-  } else {
-    int pos;
-    wxString src = m_text;
-    src.Replace(wxS("\r"), wxS(" "));
-    wxString src_LowerCase = src;
-    src_LowerCase.MakeLower();
-    oldString.MakeLower();
-    pos = src_LowerCase.Find(oldString);
-    while (pos >= 0) {
-      newText += src.Left(pos);
-      newText += newString;
-      int charsToCopy = src.Length() - pos - oldString.Length();
-      src_LowerCase = src_LowerCase.Right(charsToCopy);
-      src = src.Right(charsToCopy);
-      count++;
-      pos = src_LowerCase.Find(oldString);
+  size_t count = 0;
+  if(regexSearch)
+    {
+      RegexSearch regexsearch(oldString);
+      newText = m_text;
+      newText.Replace(wxS("\r"), wxS(" "));
+      count = regexsearch.ReplaceAll(&newText, newString);
+      if(count > 0)
+	{
+	  m_text = newText;
+	  m_containsChanges = true;
+	  ClearSelection();
+	  StyleText();
+	  if (m_selectionStart > 0)
+	    SetSelection(m_selectionStart, m_selectionEnd);
+	}
     }
-    newText += src;
-  }
-  if (count > 0) {
-    m_text = newText;
-    m_containsChanges = true;
-    ClearSelection();
-    StyleText();
-  }
+  else
+    {
+      if (!ignoreCase) {
+	newText = m_text;
+	newText.Replace(wxS("\r"), wxS(" "));
+	count = newText.Replace(oldString, newString);
+      } else {
+	int pos;
+	wxString src = m_text;
+	src.Replace(wxS("\r"), wxS(" "));
+	wxString src_LowerCase = src;
+	src_LowerCase.MakeLower();
+	oldString.MakeLower();
+	pos = src_LowerCase.Find(oldString);
+	while (pos >= 0) {
+	  newText += src.Left(pos);
+	  newText += newString;
+	  int charsToCopy = src.Length() - pos - oldString.Length();
+	  src_LowerCase = src_LowerCase.Right(charsToCopy);
+	  src = src.Right(charsToCopy);
+	  count++;
+	  pos = src_LowerCase.Find(oldString);
+	}
+	newText += src;
+      }
+      if (count > 0) {
+	m_text = newText;
+	m_containsChanges = true;
+	ClearSelection();
+	StyleText();
+      }
 
-  // If text is selected setting the selection again updates m_selectionString
-  if (m_selectionStart > 0)
-    SetSelection(m_selectionStart, m_selectionEnd);
+      // If text is selected setting the selection again updates m_selectionString
+      if (m_selectionStart > 0)
+	SetSelection(m_selectionStart, m_selectionEnd);
 
-  m_text.Replace(wxS("\u2028"), "\n");
-  m_text.Replace(wxS("\u2029"), "\n");
-
+      m_text.Replace(wxS("\u2028"), "\n");
+      m_text.Replace(wxS("\u2029"), "\n");
+    }
   return count;
 }
 
@@ -3574,7 +3592,8 @@ bool EditorCell::FindNext(wxString str, const bool &down,
 
 bool EditorCell::ReplaceSelection(const wxString &oldStr,
                                   const wxString &newString, bool keepSelected,
-                                  bool ignoreCase, bool replaceMaximaString) {
+                                  bool ignoreCase, bool replaceMaximaString,
+				  bool regexSearch) {
   wxString text(m_text);
   text.Replace(wxS("\r"), wxS(" "));
 
@@ -3587,38 +3606,49 @@ bool EditorCell::ReplaceSelection(const wxString &oldStr,
       return false;
   }
 
-  if (ignoreCase) {
-    if (text.SubString(start, end - 1).Upper() != wxString(oldStr).Upper())
-      return false;
-  } else {
-    if (text.SubString(start, end - 1) != oldStr)
-      return false;
-  }
-
-  // We cannot use SetValue() here, since SetValue() tends to move the cursor.
-  wxString text_left = text.SubString(0, start - 1);
-  wxString text_right = text.SubString(end, text.Length());
-  m_text = text_left + newString + text_right;
-  StyleText();
-
-  m_containsChanges = true;
-  m_positionOfCaret = start + newString.Length();
-
-  if (replaceMaximaString) {
-    if ((newString.EndsWith("\"") || (text_right.StartsWith("\"")))) {
-      if (!((newString.EndsWith("\"") && (text_right.StartsWith("\"")))))
-        m_positionOfCaret--;
+  if (regexSearch)
+    {
+      RegexSearch regexSearch(oldStr);
+      RegexSearch::Match match;
+      match =  regexSearch.Replace(&text, start, newString);
+      if(match.GetStart() == wxNOT_FOUND)
+	return false;
+      m_positionOfCaret = match.GetEnd();
     }
-  }
-
+  else
+    {
+      if (ignoreCase) {
+	if (text.SubString(start, end - 1).Upper() != wxString(oldStr).Upper())
+	  return false;
+      } else {
+	if (text.SubString(start, end - 1) != oldStr)
+	  return false;
+	
+	// We cannot use SetValue() here, since SetValue() tends to move the cursor.
+	wxString text_left = text.SubString(0, start - 1);
+	wxString text_right = text.SubString(end, text.Length());
+	m_text = text_left + newString + text_right;
+	StyleText();
+	
+	m_containsChanges = true;
+	m_positionOfCaret = start + newString.Length();
+	
+	if (replaceMaximaString) {
+	  if ((newString.EndsWith("\"") || (text_right.StartsWith("\"")))) {
+	    if (!((newString.EndsWith("\"") && (text_right.StartsWith("\"")))))
+	      m_positionOfCaret--;
+	  }
+	}
+      }
+    }
   if (keepSelected)
     SetSelection(start, m_positionOfCaret);
   else
     ClearSelection();
-
+  
   if (GetType() == MC_TYPE_INPUT)
     FindMatchingParens();
-
+  
   StyleText();
   return true;
 }

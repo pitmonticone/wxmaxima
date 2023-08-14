@@ -1455,13 +1455,15 @@ public:
 
     Used by the find dialog.
   */
-  void Replace(const wxString &oldString, const wxString &newString, bool ignoreCase);
+  void Replace(const wxString &oldString, const wxString &newString, bool ignoreCase,
+               bool regexSearch);
 
   /*! Replace all occurrences of a string
 
     Used by the find dialog.
   */
-  int ReplaceAll(const wxString &oldString, const wxString &newString, bool ignoreCase);
+  int ReplaceAll(const wxString &oldString, const wxString &newString, bool ignoreCase,
+                 bool regexSearch);
 
   wxString GetInputAboveCaret();
 

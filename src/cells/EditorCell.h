@@ -365,7 +365,7 @@ public:
 
   /*! Replaces all occurrences of a given string
    */
-  int ReplaceAll(wxString oldString, const wxString &newString, bool ignoreCase);
+  int ReplaceAll(wxString oldString, const wxString &newString, bool ignoreCase, const bool &regEx);
 
   /*! Finds the next occurrences of a string
 
@@ -403,7 +403,7 @@ public:
   */
   bool ReplaceSelection(const wxString &oldStr, const wxString &newString,
                         bool keepSelected = false, bool ignoreCase = false,
-                        bool replaceMaximaString = false);
+                        bool replaceMaximaString = false, bool regexSearch = false);
 
   //! Convert the current selection to a string
   wxString GetSelectionString() const;

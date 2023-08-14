@@ -7613,12 +7613,12 @@ bool Worksheet::ScrollToCaretIfNeeded() {
 }
 
 void Worksheet::Replace(const wxString &oldString, const wxString &newString,
-                        bool ignoreCase) {
+                        bool ignoreCase, bool regexSearch) {
   if (!GetActiveCell())
     return;
 
   if (GetActiveCell()->ReplaceSelection(oldString, newString, false,
-                                        ignoreCase)) {
+                                        ignoreCase, false, regexSearch)) {
     SetSaved(false);
     GroupCell *group = GetActiveCell()->GetGroup();
     group->ResetInputLabel();
@@ -7631,7 +7631,7 @@ void Worksheet::Replace(const wxString &oldString, const wxString &newString,
 }
 
 int Worksheet::ReplaceAll(const wxString &oldString, const wxString &newString,
-                          bool ignoreCase) {
+                          bool ignoreCase, bool regexSearch) {
   m_cellPointers.ResetSearchStart();
 
   if (!GetTree())
@@ -7642,7 +7642,7 @@ int Worksheet::ReplaceAll(const wxString &oldString, const wxString &newString,
     EditorCell *editor = tmp.GetEditable();
     if (editor) {
       SetActiveCell(editor);
-      int replaced = editor->ReplaceAll(oldString, newString, ignoreCase);
+      int replaced = editor->ReplaceAll(oldString, newString, ignoreCase, regexSearch);
       if (replaced > 0) {
         count += replaced;
         tmp.ResetInputLabel();

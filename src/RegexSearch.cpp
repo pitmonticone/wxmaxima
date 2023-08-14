@@ -66,6 +66,8 @@ RegexSearch::Match RegexSearch::Replace(wxString *string, size_t start, wxString
   if(matchstart != 0)
     return retval;
   *string = string->Left(start) + src;
+  retval.SetStart(start + matchstart);
+  retval.SetLength (length);
   return retval;
 }
 

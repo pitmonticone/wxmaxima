@@ -6475,7 +6475,8 @@ void wxMaxima::OnFind(wxFindDialogEvent &event) {
 void wxMaxima::OnReplace(wxFindDialogEvent &event) {
   event.Skip();
   m_worksheet->Replace(event.GetFindString(), event.GetReplaceString(),
-                       !(event.GetFlags() & wxFR_MATCHCASE));
+                       !(event.GetFlags() & wxFR_MATCHCASE),
+		       m_worksheet->m_findDialog->GetRegexSearch());
 
   if (!m_worksheet->FindNext(event.GetFindString(),
                              event.GetFlags() & wxFR_DOWN,
@@ -6490,7 +6491,8 @@ void wxMaxima::OnReplaceAll(wxFindDialogEvent &event) {
   event.Skip();
   int count =
     m_worksheet->ReplaceAll(event.GetFindString(), event.GetReplaceString(),
-			    !(event.GetFlags() & wxFR_MATCHCASE));
+			    !(event.GetFlags() & wxFR_MATCHCASE),
+			    m_worksheet->m_findDialog->GetRegexSearch());
 
   LoggingMessageBox(wxString::Format(_("Replaced %d occurrences."), count));
   if (count > 0)
