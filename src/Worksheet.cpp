@@ -7462,17 +7462,17 @@ wxString Worksheet::GetOutputAboveCaret() {
 }
 
 bool Worksheet::FindIncremental(const wxString &str, bool down,
-                                bool ignoreCase, bool regEx) {
+                                bool ignoreCase) {
   if (SearchStart()) {
     SetActiveCell(SearchStart());
     SearchStart()->CaretToPosition(IndexSearchStartedAt());
   }
 
-  return (!str.empty()) ? FindNext(str, down, ignoreCase, regEx, false) : true;
+  return (!str.empty()) ? FindNext(str, down, ignoreCase, false) : true;
 }
 
 bool Worksheet::FindNext(const wxString &str, bool down, bool ignoreCase,
-                         bool regEx, bool warn) {
+                         bool warn) {
   if (!GetTree())
     return false;
 
@@ -7521,7 +7521,7 @@ bool Worksheet::FindNext(const wxString &str, bool down, bool ignoreCase,
     EditorCell *editor = pos->GetEditable();
 
     if (editor) {
-      bool found = editor->FindNext(str, down, ignoreCase, regEx);
+      bool found = editor->FindNext(str, down, ignoreCase);
 
       if (found) {
         int strt, end;
@@ -7613,12 +7613,12 @@ bool Worksheet::ScrollToCaretIfNeeded() {
 }
 
 void Worksheet::Replace(const wxString &oldString, const wxString &newString,
-                        bool ignoreCase, bool regexSearch) {
+                        bool ignoreCase) {
   if (!GetActiveCell())
     return;
 
   if (GetActiveCell()->ReplaceSelection(oldString, newString, false,
-                                        ignoreCase, false, regexSearch)) {
+                                        ignoreCase)) {
     SetSaved(false);
     GroupCell *group = GetActiveCell()->GetGroup();
     group->ResetInputLabel();
@@ -7631,7 +7631,7 @@ void Worksheet::Replace(const wxString &oldString, const wxString &newString,
 }
 
 int Worksheet::ReplaceAll(const wxString &oldString, const wxString &newString,
-                          bool ignoreCase, bool regexSearch) {
+                          bool ignoreCase) {
   m_cellPointers.ResetSearchStart();
 
   if (!GetTree())
@@ -7642,7 +7642,7 @@ int Worksheet::ReplaceAll(const wxString &oldString, const wxString &newString,
     EditorCell *editor = tmp.GetEditable();
     if (editor) {
       SetActiveCell(editor);
-      int replaced = editor->ReplaceAll(oldString, newString, ignoreCase, regexSearch);
+      int replaced = editor->ReplaceAll(oldString, newString, ignoreCase);
       if (replaced > 0) {
         count += replaced;
         tmp.ResetInputLabel();

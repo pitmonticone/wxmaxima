@@ -1443,27 +1443,25 @@ public:
     Used by the find dialog.
     \todo Keep a list of positions the last few letters were found at?
   */
-  bool FindIncremental(const wxString &str, bool down, bool ignoreCase, bool regEx);
+  bool FindIncremental(const wxString &str, bool down, bool ignoreCase);
 
   /*! Find the next occurrence of a string
 
     Used by the find dialog.
   */
-  bool FindNext(const wxString &str, bool down, bool ignoreCase, bool regEx, bool warn = true);
+  bool FindNext(const wxString &str, bool down, bool ignoreCase, bool warn = true);
 
   /*! Replace the current occurrence of a string
 
     Used by the find dialog.
   */
-  void Replace(const wxString &oldString, const wxString &newString, bool ignoreCase,
-               bool regexSearch);
+  void Replace(const wxString &oldString, const wxString &newString, bool ignoreCase);
 
   /*! Replace all occurrences of a string
 
     Used by the find dialog.
   */
-  int ReplaceAll(const wxString &oldString, const wxString &newString, bool ignoreCase,
-                 bool regexSearch);
+  int ReplaceAll(const wxString &oldString, const wxString &newString, bool ignoreCase);
 
   wxString GetInputAboveCaret();
 
