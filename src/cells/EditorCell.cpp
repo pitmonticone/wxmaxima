@@ -3426,7 +3426,7 @@ int EditorCell::ReplaceAll(wxString oldString, const wxString &newString,
 
   SaveValue();
   wxString newText;
-  size_t count = 0;
+  long count = 0;
   if (!ignoreCase) {
     newText = m_text;
     newText.Replace(wxS("\r"), wxS(" "));
@@ -3700,7 +3700,7 @@ bool EditorCell::ReplaceSelection(const wxString &oldStr,
 
   if (GetType() == MC_TYPE_INPUT)
     FindMatchingParens();
-  
+
   StyleText();
   return true;
 }
@@ -3730,7 +3730,7 @@ bool EditorCell::ReplaceSelection_RegEx(const wxString &oldStr,
   
   if (GetType() == MC_TYPE_INPUT)
     FindMatchingParens();
-  
+
   StyleText();
   return true;
 }

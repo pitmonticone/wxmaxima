@@ -6459,17 +6459,21 @@ void wxMaxima::EditMenu(wxCommandEvent &event) {
 }
 
 void wxMaxima::OnFind(wxFindDialogEvent &event) {
-  wxLogMessage(_("A find event"));
+  wxLogMessage(_("A find event, %s"), event.GetFindString().mb_str());
   if(m_worksheet->m_findDialog)
     {
       if(!m_worksheet->m_findDialog->GetRegexSearch())
-{
-      if (!m_worksheet->FindNext(event.GetFindString(),
-				 event.GetFlags() & wxFR_DOWN,
-				 !(event.GetFlags() & wxFR_MATCHCASE)
-				 ))
-	LoggingMessageBox(_("No matches found!"));
-    }
+	{
+	  if (!m_worksheet->FindNext(event.GetFindString(),
+				     event.GetFlags() & wxFR_DOWN,
+				     !(event.GetFlags() & wxFR_MATCHCASE)
+				     ))
+	    LoggingMessageBox(_("No matches found!"));
+	}
+      else
+	{
+	  wxLogMessage(_("RegEx search"));
+	}
 }
   event.Skip();
 }
@@ -6492,7 +6496,7 @@ void wxMaxima::OnReplace(wxFindDialogEvent &event) {
 
 void wxMaxima::OnReplaceAll(wxFindDialogEvent &event) {
   event.Skip();
-  int count;
+  long count;
   
   if(!m_worksheet->m_findDialog->GetRegexSearch())
     {
