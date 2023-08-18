@@ -329,11 +329,8 @@ wxMaxima::wxMaxima(wxWindow *parent, int id,
   m_oldFindFlags = 0;
   m_worksheet->m_currentFile = wxEmptyString;
   int findFlags = wxFR_DOWN | wxFR_MATCHCASE;
-  wxConfig::Get()->Read(wxS("Find/Flags"), &findFlags);
+  wxConfig::Get()->Read(wxS("findFlags"), &findFlags);
   m_findData.SetFlags(findFlags);
-  bool findRegex = false;
-  wxConfig::Get()->Read(wxS("Find/RegexSearch"), &findRegex);
-  m_findData.SetRegexSearch(findRegex);
   m_worksheet->SetFocus();
   m_worksheet->m_keyboardInactiveTimer.SetOwner(this,
                                                 KEYBOARD_INACTIVITY_TIMER_ID);
@@ -1744,9 +1741,6 @@ void wxMaxima::StartAutoSaveTimer() {
 }
 
 wxMaxima::~wxMaxima() {
-  wxConfig::Get()->Write(wxS("Find/Flags"), m_findData.GetFlags());
-  wxConfig::Get()->Write(wxS("Find/RegexSearch"), m_findData.GetRegexSearch());
-
   KillMaxima(false);
   DelistTopLevelWindow(this);
 
@@ -4930,10 +4924,9 @@ void wxMaxima::OnIdle(wxIdleEvent &event) {
 
       if ((m_configuration.IncrementalSearch()) &&
           (m_worksheet->m_findDialog != NULL)) {
-	if(!m_worksheet->m_findDialog->GetRegexSearch())
-          m_worksheet->FindIncremental(m_findData.GetFindString(),
-                                       m_findData.GetFlags() & wxFR_DOWN,
-                                       !(m_findData.GetFlags() & wxFR_MATCHCASE));
+        m_worksheet->FindIncremental(m_findData.GetFindString(),
+                                     m_findData.GetFlags() & wxFR_DOWN,
+                                     !(m_findData.GetFlags() & wxFR_MATCHCASE));
       }
 
       m_worksheet->RequestRedraw();
@@ -6459,51 +6452,33 @@ void wxMaxima::EditMenu(wxCommandEvent &event) {
 }
 
 void wxMaxima::OnFind(wxFindDialogEvent &event) {
-  wxLogMessage(_("A find event, %s"), event.GetFindString().mb_str());
-  if(m_worksheet->m_findDialog)
-    {
-      if(!m_worksheet->m_findDialog->GetRegexSearch())
-	{
-	  if (!m_worksheet->FindNext(event.GetFindString(),
-				     event.GetFlags() & wxFR_DOWN,
-				     !(event.GetFlags() & wxFR_MATCHCASE)
-				     ))
-	    LoggingMessageBox(_("No matches found!"));
-	}
-      else
-	{
-	  wxLogMessage(_("RegEx search"));
-	}
-}
+    wxLogMessage(_("A find event"));
+  if (!m_worksheet->FindNext(event.GetFindString(),
+                             event.GetFlags() & wxFR_DOWN,
+                             !(event.GetFlags() & wxFR_MATCHCASE)))
+    LoggingMessageBox(_("No matches found!"));
   event.Skip();
 }
 
 void wxMaxima::OnReplace(wxFindDialogEvent &event) {
   event.Skip();
-  if(!m_worksheet->m_findDialog->GetRegexSearch())
-    {
-      m_worksheet->Replace(event.GetFindString(), event.GetReplaceString(),
-			   !(event.GetFlags() & wxFR_MATCHCASE));
-      
-      if (!m_worksheet->FindNext(event.GetFindString(),
-				 event.GetFlags() & wxFR_DOWN,
-				 !(event.GetFlags() & wxFR_MATCHCASE)))
-	LoggingMessageBox(_("No matches found!"));
-      else
-	m_worksheet->UpdateTableOfContents();
-    }
+  m_worksheet->Replace(event.GetFindString(), event.GetReplaceString(),
+                       !(event.GetFlags() & wxFR_MATCHCASE));
+
+  if (!m_worksheet->FindNext(event.GetFindString(),
+                             event.GetFlags() & wxFR_DOWN,
+                             !(event.GetFlags() & wxFR_MATCHCASE)))
+    LoggingMessageBox(_("No matches found!"));
+  else
+    m_worksheet->UpdateTableOfContents();
 }
 
 void wxMaxima::OnReplaceAll(wxFindDialogEvent &event) {
   event.Skip();
-  long count;
-  
-  if(!m_worksheet->m_findDialog->GetRegexSearch())
-    {
-      count =
-	m_worksheet->ReplaceAll(event.GetFindString(), event.GetReplaceString(),
-				!(event.GetFlags() & wxFR_MATCHCASE));
-    }
+  int count =
+    m_worksheet->ReplaceAll(event.GetFindString(), event.GetReplaceString(),
+			    !(event.GetFlags() & wxFR_MATCHCASE));
+
   LoggingMessageBox(wxString::Format(_("Replaced %d occurrences."), count));
   if (count > 0)
     m_worksheet->UpdateTableOfContents();
