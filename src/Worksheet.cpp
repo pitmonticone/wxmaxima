@@ -7471,6 +7471,16 @@ bool Worksheet::FindIncremental(const wxString &str, bool down,
   return (!str.empty()) ? FindNext(str, down, ignoreCase, false) : true;
 }
 
+
+bool Worksheet::FindIncremental_RegEx(const wxString &str, bool down) {
+  if (SearchStart()) {
+    SetActiveCell(SearchStart());
+    SearchStart()->CaretToPosition(IndexSearchStartedAt());
+  }
+
+  return (!str.empty()) ? FindNext_Regex(str, down, false) : true;
+}
+
 bool Worksheet::FindNext(const wxString &str, bool down, bool ignoreCase,
                          bool warn) {
   if (!GetTree())

@@ -4934,6 +4934,9 @@ void wxMaxima::OnIdle(wxIdleEvent &event) {
           m_worksheet->FindIncremental(m_findData.GetFindString(),
                                        m_findData.GetFlags() & wxFR_DOWN,
                                        !(m_findData.GetFlags() & wxFR_MATCHCASE));
+	else
+          m_worksheet->FindIncremental_RegEx(m_findData.GetFindString(),
+                                       m_findData.GetFlags() & wxFR_DOWN);
       }
 
       m_worksheet->RequestRedraw();

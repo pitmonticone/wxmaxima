@@ -1444,6 +1444,7 @@ public:
     \todo Keep a list of positions the last few letters were found at?
   */
   bool FindIncremental(const wxString &str, bool down, bool ignoreCase);
+  bool FindIncremental_RegEx(const wxString &str, bool down);
 
   /*! Find the next occurrence of a string
 
