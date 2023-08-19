@@ -6497,6 +6497,16 @@ void wxMaxima::OnReplace(wxFindDialogEvent &event) {
       else
 	m_worksheet->UpdateTableOfContents();
     }
+  else
+    {
+      m_worksheet->Replace_RegEx(event.GetFindString(), event.GetReplaceString());
+      
+      if (!m_worksheet->FindNext_Regex(event.GetFindString(),
+				       event.GetFlags() & wxFR_DOWN))
+	LoggingMessageBox(_("No matches found!"));
+      else
+	m_worksheet->UpdateTableOfContents();
+    }
 }
 
 void wxMaxima::OnReplaceAll(wxFindDialogEvent &event) {
@@ -6509,6 +6519,9 @@ void wxMaxima::OnReplaceAll(wxFindDialogEvent &event) {
 	m_worksheet->ReplaceAll(event.GetFindString(), event.GetReplaceString(),
 				!(event.GetFlags() & wxFR_MATCHCASE));
     }
+  else
+      count =
+	m_worksheet->ReplaceAll_RegEx(event.GetFindString(), event.GetReplaceString());
   LoggingMessageBox(wxString::Format(_("Replaced %d occurrences."), count));
   if (count > 0)
     m_worksheet->UpdateTableOfContents();

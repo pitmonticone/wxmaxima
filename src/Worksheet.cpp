@@ -7726,6 +7726,22 @@ void Worksheet::Replace(const wxString &oldString, const wxString &newString,
   GetActiveCell()->SearchStartedHere();
 }
 
+void Worksheet::Replace_RegEx(const wxString &oldString, const wxString &newString) {
+  if (!GetActiveCell())
+    return;
+
+  if (GetActiveCell()->ReplaceSelection_RegEx(oldString, newString)) {
+    SetSaved(false);
+    GroupCell *group = GetActiveCell()->GetGroup();
+    group->ResetInputLabel();
+    group->ResetSize();
+    GetActiveCell()->ResetSize();
+    Recalculate();
+    RequestRedraw();
+  }
+  GetActiveCell()->SearchStartedHere();
+}
+
 int Worksheet::ReplaceAll(const wxString &oldString, const wxString &newString,
                           bool ignoreCase) {
   m_cellPointers.ResetSearchStart();
@@ -7739,6 +7755,35 @@ int Worksheet::ReplaceAll(const wxString &oldString, const wxString &newString,
     if (editor) {
       SetActiveCell(editor);
       int replaced = editor->ReplaceAll(oldString, newString, ignoreCase);
+      if (replaced > 0) {
+        count += replaced;
+        tmp.ResetInputLabel();
+        tmp.ResetSize();
+      }
+    }
+  }
+
+  if (count > 0) {
+    SetSaved(false);
+    Recalculate();
+    RequestRedraw();
+  }
+
+  return count;
+}
+
+int Worksheet::ReplaceAll_RegEx(const wxString &oldString, const wxString &newString) {
+  m_cellPointers.ResetSearchStart();
+
+  if (!GetTree())
+    return 0;
+
+  int count = 0;
+  for (auto &tmp : OnList(GetTree())) {
+    EditorCell *editor = tmp.GetEditable();
+    if (editor) {
+      SetActiveCell(editor);
+      int replaced = editor->ReplaceAll_RegEx(oldString, newString);
       if (replaced > 0) {
         count += replaced;
         tmp.ResetInputLabel();
