@@ -69,7 +69,6 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
 			 NULL, this);
   grid_sizer->Add(m_replaceText, wxSizerFlags().Expand().Border(wxALL, 5));
   m_matchCase = new wxCheckBox(this, -1, _("Match Case"));
-  m_matchCase->SetValue(!!(data->GetFlags() & wxFR_MATCHCASE));
   lefttop_sizer->Add(grid_sizer, wxSizerFlags().Expand());
   lefttop_sizer->Add(m_matchCase, wxSizerFlags().Expand().Border(wxALL, 5));
 
@@ -99,6 +98,11 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   m_simpleSearch->Connect(wxEVT_RADIOBUTTON,
 			  wxCommandEventHandler(FindReplacePane::OnRegexSimpleChange),
 			  NULL, this);
+  m_matchCase->Enable(!m_regexSearch->GetValue());
+  if(m_regexSearch->GetValue())
+    m_matchCase->SetValue(true);
+  else
+    m_matchCase->SetValue(!!(data->GetFlags() & wxFR_MATCHCASE));
 
   m_forward->SetValue(!(data->GetFlags() & wxFR_DOWN));
   m_backwards->SetValue(!!(data->GetFlags() & wxFR_DOWN));
@@ -190,6 +194,11 @@ void FindReplacePane::OnDirectionChange(wxCommandEvent &event) {
 void FindReplacePane::OnRegexSimpleChange(wxCommandEvent &event){
   event.Skip();
   m_findReplaceData->SetRegexSearch(m_regexSearch->GetValue());
+  m_matchCase->Enable(!m_regexSearch->GetValue());
+  if(m_regexSearch->GetValue())
+    m_matchCase->SetValue(true);
+  else
+    m_matchCase->SetValue(!!(m_findReplaceData->GetFlags() & wxFR_MATCHCASE));
 }
 
 
