@@ -39,6 +39,7 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
   wxBoxSizer *top_sizer = new wxBoxSizer(wxHORIZONTAL);
   wxBoxSizer *button_sizer = new wxBoxSizer(wxVERTICAL);
+  wxBoxSizer *lefttop_sizer = new wxBoxSizer(wxVERTICAL);
   wxFlexGridSizer *grid_sizer = new wxFlexGridSizer(2);
   grid_sizer->SetFlexibleDirection(wxHORIZONTAL);
   grid_sizer->AddGrowableCol(0, 0);
@@ -67,14 +68,16 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
 			 wxEVT_TEXT, wxCommandEventHandler(FindReplacePane::OnReplaceStringChange),
 			 NULL, this);
   grid_sizer->Add(m_replaceText, wxSizerFlags().Expand().Border(wxALL, 5));
+  m_matchCase = new wxCheckBox(this, -1, _("Match Case"));
+  m_matchCase->SetValue(!!(data->GetFlags() & wxFR_MATCHCASE));
+  lefttop_sizer->Add(grid_sizer, wxSizerFlags().Expand());
+  lefttop_sizer->Add(m_matchCase, wxSizerFlags().Expand().Border(wxALL, 5));
 
   m_replaceButton = new wxButton(this, wxID_REPLACE);
   m_replaceButton->Connect(wxEVT_BUTTON,
                            wxCommandEventHandler(FindReplacePane::OnReplace),
                            NULL, this);
   button_sizer->Add(m_replaceButton, wxSizerFlags().Expand().Border(wxALL, 5));
-
-  grid_sizer->Add(20,20);
 
   wxSizer *fbbox = new wxBoxSizer(wxHORIZONTAL);
   m_forward = new wxRadioButton(this, -1, _("Up"), wxDefaultPosition,
@@ -111,16 +114,11 @@ FindReplacePane::FindReplacePane(wxWindow *parent, FindReplaceData *data)
   m_replaceAllButton->Connect(
 			      wxEVT_BUTTON, wxCommandEventHandler(FindReplacePane::OnReplaceAll), NULL,
 			      this);
-
-  grid_sizer->AddSpacer(0);
-  top_sizer->Add(grid_sizer, wxSizerFlags().Expand());
+  top_sizer->Add(lefttop_sizer, wxSizerFlags().Expand());
   top_sizer->Add(button_sizer, wxSizerFlags());
 
-  m_matchCase = new wxCheckBox(this, -1, _("Match Case"));
-  m_matchCase->SetValue(!!(data->GetFlags() & wxFR_MATCHCASE));
   mainSizer->Add(top_sizer, wxSizerFlags().Expand());
   mainSizer->Add(fbbox, wxSizerFlags().Expand());
-  mainSizer->Add(m_matchCase, wxSizerFlags().Expand().Border(wxALL, 5));
   m_matchCase->Connect(wxEVT_CHECKBOX,
                        wxCommandEventHandler(FindReplacePane::OnMatchCase),
                        NULL, this);
