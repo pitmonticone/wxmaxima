@@ -90,7 +90,7 @@ RegexSearch::Match RegexSearch::FindNext_Reverse(wxString string, size_t start)
       GetMatch(&matchstart, &length, 0);
       retval.SetStart(offset + matchstart);
       retval.SetLength(length);
-      src.Right(src.Length() - matchstart - length);
+      src = src.Right(src.Length() - matchstart - length);
       offset += matchstart + length;
     }
     return retval;
