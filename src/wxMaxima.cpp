@@ -6472,7 +6472,9 @@ void wxMaxima::OnFind(wxFindDialogEvent &event) {
 	}
       else
 	{
-	  wxLogMessage(_("RegEx search"));
+	  if (!m_worksheet->FindNext_Regex(event.GetFindString(),
+					   event.GetFlags() & wxFR_DOWN))
+	    LoggingMessageBox(_("No matches found!"));
 	}
 }
   event.Skip();

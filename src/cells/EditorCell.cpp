@@ -3548,9 +3548,9 @@ bool EditorCell::FindNext(wxString str, const bool &down,
       // We are at the start of a match, but the search expression has changed
       if (m_selectionStart > 0) {
         if (down)
-          start = wxMin(m_selectionStart, m_selectionEnd);
+          start = wxMin(m_selectionStart, m_selectionEnd) + 1;
         else
-          start = wxMax(m_selectionStart, m_selectionEnd) + 1;
+          start = wxMax(m_selectionStart, m_selectionEnd) - 1;
       } else {
         if (m_positionOfCaret > 0)
           start = m_positionOfCaret;
@@ -3617,7 +3617,7 @@ bool EditorCell::FindNext_RegEx(wxString str, const bool &down) {
       if (down)
         start = wxMin(m_selectionStart, m_selectionEnd) + 1;
       else
-        start = wxMax(m_selectionStart, m_selectionEnd);
+        start = wxMax(m_selectionStart, m_selectionEnd) - 1;
     } else {
       // We are at the start of a match, but the search expression has changed
       if (m_selectionStart > 0) {
