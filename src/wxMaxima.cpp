@@ -6522,7 +6522,7 @@ void wxMaxima::OnReplaceAll(wxFindDialogEvent &event) {
   else
       count =
 	m_worksheet->ReplaceAll_RegEx(event.GetFindString(), event.GetReplaceString());
-  LoggingMessageBox(wxString::Format(_("Replaced %d occurrences."), count));
+  LoggingMessageBox(wxString::Format(_("Replaced %li occurrences."), (long)count));
   if (count > 0)
     m_worksheet->UpdateTableOfContents();
 }

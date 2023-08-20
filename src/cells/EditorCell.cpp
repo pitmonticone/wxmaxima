@@ -3725,6 +3725,7 @@ bool EditorCell::ReplaceSelection_RegEx(const wxString &oldStr,
   match =  regexSearch.Replace(&text, start, newString);
   if(match.GetStart() == wxNOT_FOUND)
     return false;
+  m_text = text;
   m_positionOfCaret = match.GetEnd();
   ClearSelection();
   

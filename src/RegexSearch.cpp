@@ -27,6 +27,7 @@
 */
 
 #include "RegexSearch.h"
+#include <iostream>
 
 RegexSearch::RegexSearch(wxString regex)
   : wxRegEx(regex) {}
@@ -57,12 +58,12 @@ RegexSearch::Match RegexSearch::Replace(wxString *string, size_t start, wxString
   if(start >= string->Length())
     return retval;
   wxString src = string->Right(string->Length() - start);
-  if(!Matches(src))
+    if(!Matches(src))
     return retval;
   size_t matchstart;
   size_t length;
   GetMatch(&matchstart, &length, 0);
-  wxRegEx::Replace(&src, replacement);
+  wxRegEx::Replace(&src, replacement, 1);
   if(matchstart != 0)
     return retval;
   *string = string->Left(start) + src;
