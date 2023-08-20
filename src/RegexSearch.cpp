@@ -28,6 +28,7 @@
 
 #include "RegexSearch.h"
 #include <iostream>
+#include <wx/log.h>
 
 RegexSearch::RegexSearch(wxString regex)
   : wxRegEx(regex) {}
@@ -38,6 +39,7 @@ RegexSearch::~RegexSearch()
 
 RegexSearch::Match RegexSearch::FindNext(wxString string, size_t start)
 {
+  wxLogNull suppress;
   Match retval;
   if(start >= string.Length())
     return retval;
@@ -54,6 +56,7 @@ RegexSearch::Match RegexSearch::FindNext(wxString string, size_t start)
 
 RegexSearch::Match RegexSearch::Replace(wxString *string, size_t start, wxString replacement)
 {
+  wxLogNull suppress;
   Match retval;
   if(start >= string->Length())
     return retval;
@@ -80,6 +83,7 @@ RegexSearch::Match RegexSearch::Replace_Reverse(wxString *string, size_t start,
 
 RegexSearch::Match RegexSearch::FindNext_Reverse(wxString string, size_t start)
 {
+  wxLogNull suppress;
   Match retval;
   size_t matchstart;
   size_t length;
