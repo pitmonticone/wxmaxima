@@ -46,11 +46,11 @@ jobs:
              echo "Building wxWidgets from sources"
              mkdir "wxwidgets-build"
              cd "wxwidgets-build"
-             cmake "-DCMAKE_INSTALL_PREFIX=../wxwidgets-install"  "../wxwidgets-source"
+             cmake "../wxwidgets-source"
              cmake --build .
              cd ..
       - name: Configure CMake
-        run: cmake -DwxWidgets_ROOT_DIR="../wxwidgets-build" -B ${{ env.build }} 
+        run: cmake -DwxWidgets_ROOT_DIR="wxwidgets-build" -B ${{ env.build }} 
       # Build is not required unless generated source files are used
       # - name: Build CMake
       #   run: cmake --build ${{ env.build }}
