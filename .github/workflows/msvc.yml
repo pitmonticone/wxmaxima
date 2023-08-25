@@ -48,7 +48,6 @@ jobs:
              cd "wxwidgets-build"
              cmake "-DCMAKE_INSTALL_PREFIX=../wxwidgets-install"  "../wxwidgets-source"
              cmake --build .
-             cmake --install .
              cd ..
       - name: Configure CMake
         run: cmake -B ${{ env.build }} -wxWidgets_ROOT_DIR=../wxwidgets-build
