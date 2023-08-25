@@ -39,14 +39,13 @@ jobs:
         uses: actions/checkout@v3
       - name: wxWidgets
         run: |
-             # If there's no installation of wxWidgets available, we have to build it
              Start-FileDownload "https://github.com/wxWidgets/wxWidgets/releases/download/v${env:WXVERSION}/wxWidgets-${env:WXVERSION}.7z"
              echo '* Unpacking wxWidgets sources'
              7z x "wxWidgets-${env:WXVERSION}.7z" "-oC:\wxwidgets-source_${env:WXVERSION}" -y
              echo '* Building wxWidgets from sources'
              mkdir "C:\wxwidgets-build_${env:WXBUILDVER}" | Out-Null
              pushd "C:\wxwidgets-build_${env:WXBUILDVER}"
-             cmake -G "Visual Studio 17 2022"  -DCMAKE_BUILD_TYPE=Release -DwxBUILD_SHARED=NO -DwxUSE_STC=NO -DwxUSE_RIBBON=NO "-DCMAKE_INSTALL_PREFIX="C:\wxwidgets-install_${env:WXBUILDVER}" -Wno-dev "C:\wxwidgets-source_${env:WXVERSION}"
+             cmake -G "Visual Studio 17 2022"  -DCMAKE_BUILD_TYPE=Release -DwxBUILD_SHARED=NO -DwxUSE_STC=NO -DwxUSE_RIBBON=NO "-DCMAKE_INSTALL_PREFIX=C:\wxwidgets-install_${env:WXBUILDVER}" -Wno-dev "C:\wxwidgets-source_${env:WXVERSION}"
              cmake --build .
              cmake --install .
              popd
