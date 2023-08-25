@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: wxWidgets
+      - name: Compile and install wxWidgets
         run: |
              $SRC_ARCHIVE="wxWidgets-${env:WXVERSION}.7z"
              $BUILD_DIR="C:\wxwidgets-build_${env:WXBUILDVER}"
