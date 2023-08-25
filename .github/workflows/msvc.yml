@@ -40,7 +40,7 @@ jobs:
       - name: wxWidgets
         run: |
              echo "Downloading wxWidgets"
-             wget "https://github.com/wxWidgets/wxWidgets/releases/download/v${env:WXVERSION}/wxWidgets-${env:WXVERSION}.7z"
+             curl "https://github.com/wxWidgets/wxWidgets/releases/download/v${env:WXVERSION}/wxWidgets-${env:WXVERSION}.7z"
              echo "Unpacking wxWidgets sources"
              7z x "wxWidgets-${env:WXVERSION}.7z" "-oC:\wxwidgets-source_${env:WXVERSION}" -y
              echo "Building wxWidgets from sources"
