@@ -43,6 +43,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
       - name: Compile and install wxWidgets
         run: |
              $SRC_ARCHIVE="wxWidgets-${env:WXVERSION}.7z"
@@ -53,19 +54,13 @@ jobs:
              # If there's no installation of wxWidgets available, we have to build it
              if (!(Test-Path $INSTALL_DIR)) {
                  echo '- No wxWidgets installation $INSTALL_DIR was found'
-                 
                  echo '* Downloading wxWidgets sources'
                  Start-FileDownload "https://github.com/wxWidgets/wxWidgets/releases/download/v${env:WXVERSION}/$SRC_ARCHIVE"
-          
                  echo '* Unpacking wxWidgets sources'
                  7z x "$SRC_ARCHIVE" "-o$SOURCE_DIR" -y
-                 
                  echo '* Building wxWidgets from sources'
                  mkdir $BUILD_DIR | Out-Null
                  pushd $BUILD_DIR
-                 # Note: wxWidgets unity builds fail at least for version 3.1.3. This is a fixable problem but would
-                 # require patching the CMakeLists there. So for now it's disabled, since we don'y rebuild wxWidgets
-          # often.
                  echo cmake -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release  `
                    -DwxBUILD_SHARED=NO  `
                    -DwxUSE_STC=NO  `
@@ -80,7 +75,6 @@ jobs:
                    "$SOURCE_DIR"
                  cmake --build .
                  cmake --install .
-                 # Remove all files other than .pdb files - we do need those so that the build is quiet
                  popd
           
       - name: Configure CMake
