@@ -46,12 +46,12 @@ jobs:
              echo "Building wxWidgets from sources"
              mkdir "wxwidgets-build"
              cd "wxwidgets-build"
-             cmake -G "Visual Studio 17 2022"  -DCMAKE_BUILD_TYPE=Release -DwxBUILD_SHARED=NO -DwxUSE_STC=NO -DwxUSE_RIBBON=NO "-DCMAKE_INSTALL_PREFIX=C:\wxwidgets-install_${env:WXBUILDVER}" -Wno-dev "../wxwidgets-source"
+             cmake "-DCMAKE_INSTALL_PREFIX=../wxwidgets-install"  "../wxwidgets-source"
              cmake --build .
              cmake --install .
              cd ..
       - name: Configure CMake
-        run: cmake -B ${{ env.build }}
+        run: cmake -B ${{ env.build }} -wxWidgets_ROOT_DIR=../wxwidgets-build
       # Build is not required unless generated source files are used
       # - name: Build CMake
       #   run: cmake --build ${{ env.build }}
