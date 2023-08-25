@@ -8,13 +8,14 @@
 
 name: Microsoft C++ Code Analysis
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '43 4 * * 6'
+on: [push]
+#on:
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
+#  schedule:
+#    - cron: '43 4 * * 6'
 
 env:
   build: '${{ github.workspace }}/build'
