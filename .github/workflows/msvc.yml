@@ -53,7 +53,7 @@ jobs:
              cd build
              ls ../wxwidgets-source
              ls ../wxwidgets-source/lib
-             cmake -DwxWidgets_ROOT_DIR="../wxwidgets-source" -DwxWidgets_LIB_DIR="../wxwidgets-source/lib -DWXM_DISABLE_WEBVIEW=ON ..
+             cmake -DwxWidgets_ROOT_DIR="../wxwidgets-source" -DwxWidgets_LIB_DIR="../wxwidgets-source/lib" -DWXM_DISABLE_WEBVIEW=ON ..
              cd ..
       # Build is not required unless generated source files are used
       # - name: Build CMake
