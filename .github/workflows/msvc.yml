@@ -36,17 +36,25 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Cache wxWidgets
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-wxWidgets
+        with:
+          path: wxWidgets-${{env.WXVERSION}}
+          key: ${{ runner.os }}-build-msvc-${{ env.cache-name }}-0
       - name: wxWidgets
         run: |
-             echo "Downloading wxWidgets"
-             curl "https://github.com/wxWidgets/wxWidgets/releases/download/v${env:WXVERSION}/wxWidgets-${env:WXVERSION}.7z" -L --output wxWidgets.7z
-             echo "Unpacking wxWidgets sources"
-             7z x "wxWidgets.7z" "-owxwidgets-source" -y
-             echo "Building wxWidgets from sources"
-             cd "wxwidgets-source"
-             cmake "."
-             cmake --build .
-             cd ..
+             if (Test-Path wxwidgets-source) { echo "wxWidgets already present"} else {
+                 echo "Downloading wxWidgets"
+                 curl "https://github.com/wxWidgets/wxWidgets/releases/download/v${env:WXVERSION}/wxWidgets-${env:WXVERSION}.7z" -L --output wxWidgets.7z
+                 echo "Unpacking wxWidgets sources"
+                 7z x "wxWidgets.7z" "-owxwidgets-source" -y
+                 echo "Building wxWidgets from sources"
+                 cd "wxwidgets-source"
+                 cmake "."
+                 cmake --build .
+                 cd .. }
       - name: Configure wxMaxima
         run: |
              mkdir build
