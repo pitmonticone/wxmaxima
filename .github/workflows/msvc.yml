@@ -19,8 +19,7 @@ on: [push]
 
 env:
   build: '${{ github.workspace }}/build'
-  WXVERSION: 3.0.5
-  WXBUILDVER: 3.0.5_0
+  WXVERSION: 3.2.2.1
 
 permissions:
   contents: read
