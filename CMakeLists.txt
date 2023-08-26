@@ -89,6 +89,8 @@ endif()
 # Environment Check
 #
 
+message(STATUS "CMAKE version ${CMAKE_VERSION}")
+
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to 'Debug' as none was specified.")
