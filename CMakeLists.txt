@@ -89,8 +89,6 @@ endif()
 # Environment Check
 #
 
-message(STATUS "CMAKE version ${CMAKE_VERSION}")
-
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "Setting build type to 'Debug' as none was specified.")
@@ -123,6 +121,8 @@ include(GNUInstallDirs)
 
 message(STATUS "Looking for wxWidgets in:           ${wxWidgets_ROOT_DIR}")
 message(STATUS "Looking for wxWidgets libraries in: ${wxWidgets_LIB_DIR}")
+#message(STATUS "Looking for wxWidgets configuration:${wxWidgets_CONFIGURATION}")
+#message(STATUS "CMAKE version ${CMAKE_VERSION}")
 
 # The package order below matters.
 ###
