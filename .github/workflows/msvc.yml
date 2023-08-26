@@ -44,13 +44,12 @@ jobs:
              echo "Unpacking wxWidgets sources"
              7z x "wxWidgets.7z" "-owxwidgets-source" -y
              echo "Building wxWidgets from sources"
-             mkdir "wxwidgets-build"
-             cd "wxwidgets-build"
-             cmake "../wxwidgets-source"
+             cd "wxwidgets-source"
+             cmake "."
              cmake --build .
              cd ..
       - name: Configure CMake
-        run: cmake -DwxWidgets_ROOT_DIR="wxwidgets-build" -B ${{ env.build }} 
+        run: cmake -DwxWidgets_ROOT_DIR="wxwidgets-source" -B ${{ env.build }} 
       # Build is not required unless generated source files are used
       # - name: Build CMake
       #   run: cmake --build ${{ env.build }}
