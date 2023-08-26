@@ -49,7 +49,7 @@ jobs:
              cmake --build .
              cd ..
       - name: Configure CMake
-        run: cmake -DwxWidgets_ROOT_DIR="wxwidgets-source" -B ${{ env.build }} 
+        run: cmake -DwxWidgets_ROOT_DIR="wxwidgets-source" -DwxWidgets_LIB_DIR="wxwidgets-source/lib/vc_x64_lib" -B ${{ env.build }} 
       # Build is not required unless generated source files are used
       # - name: Build CMake
       #   run: cmake --build ${{ env.build }}
