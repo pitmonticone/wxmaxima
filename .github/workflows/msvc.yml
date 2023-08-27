@@ -19,7 +19,7 @@ on: [push]
 
 env:
   build: '${{ github.workspace }}/build'
-  config: debug
+  config: Debug
   WXVERSION: 3.2.2.1
 
 permissions:
