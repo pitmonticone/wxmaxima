@@ -2946,7 +2946,7 @@ void EditorCell::ClearUndo() {
 
 void EditorCell::HandleSoftLineBreaks_Code(
 					   StyledText *&lastSpace, wxCoord &lineWidth, const wxString &token,
-					   unsigned long charInCell, wxString &text, size_t const &lastSpacePos,
+					   size_t charInCell, wxString &text, size_t const &lastSpacePos,
 					   wxCoord &indentationPixels) {
   // If we don't want to autowrap code we don't do nothing here.
   // cppcheck-suppress knownConditionTrueFalse
@@ -3078,7 +3078,7 @@ void EditorCell::StyleTextTexts() {
   if (m_configuration->GetAutoWrap()) {
     SetFont(m_configuration->GetRecalcDC());
     wxString line;
-    unsigned long lastSpacePos = 0;
+    size_t lastSpacePos = 0;
     wxString::const_iterator lastSpaceIt;
     long lastLineStart = 0;
     wxCoord width;
@@ -3089,7 +3089,7 @@ void EditorCell::StyleTextTexts() {
     std::vector<wxCoord> indentPixels;
     wxString indentChar;
 
-    unsigned long i = 0;
+    size_t i = 0;
     wxCoord indent;
     wxString::const_iterator it = m_text.begin();
     while (it < m_text.end()) {
