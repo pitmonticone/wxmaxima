@@ -71,6 +71,31 @@ public:
   EditorCell(GroupCell *group, Configuration *config, const wxString &text = {});
   EditorCell(GroupCell *group, const EditorCell &cell);
 //  std::unique_ptr<Cell> Copy(GroupCell *group) const override;
+  class Selection
+  {
+    void SetSelection(size_t start, size_t end){m_selectionStart = start; m_selectionEnd = end;}
+    bool IsActive() const {return m_selectionActive;}
+    bool Activate() {m_selectionActive = true;}
+    bool Inactivate() {m_selectionActive = false;}
+    void Start(size_t start) {m_selectionStart = start; Activate();}
+    void End(size_t end) {m_selectionEnd = end; Activate();}
+    size_t Start() const {return m_selectionStart;}
+    size_t End() const {return m_selectionEnd;}
+    size_t Left() const {return wxMIN(m_selectionStart, m_selectionEnd);}
+    size_t Right() const {return wxMAX(m_selectionStart, m_selectionEnd);}
+  private:
+    /*! The start of the current selection.
+     */
+    size_t m_selectionStart = 0;
+    /*! The end of the current selection.
+     */
+    size_t m_selectionEnd = 0;
+    size_t m_oldSelectionStart = 0;
+    size_t m_oldSelectionEnd = 0;
+    size_t m_lastSelectionStart = 0;
+    size_t m_selectionActive = false;
+  };
+  Selection GetSelection() const {return m_selection;}
   const CellTypeInfo &GetInfo() override;
   std::unique_ptr<Cell> Copy(GroupCell *group) const override;
 
@@ -236,24 +261,23 @@ public:
   void PasteFromClipboard(bool primary = false) override;
 
   //! Get the character position the selection has been started with
-  long GetSelectionStart() const
-    { return m_selectionStart; }
+  size_t GetSelectionStart() const
+    { return GetSelection()->Start(); }
 
   //! Get the character position the selection has been ended with
   long GetSelectionEnd() const
-    { return m_selectionEnd; }
+    { return GetSelection()->End(); }
 
   //! Select the whole text contained in this Cell
   void SelectAll() override
     {
-      m_selectionStart = 0;
-      m_selectionEnd = m_positionOfCaret = m_text.Length();
+      GetSelection()->SetSelection(0, m_positionOfCaret = m_text.Length());
     }
 
   //! Does the selection currently span the whole cell?
   bool AllSelected() const
     {
-      return (m_selectionStart == 0) && (m_selectionEnd == (long) m_text.Length());
+      return (GetSelection()->Start() == 0) && (GetSelection()->End == m_text.Length());
     }
 
   //! Unselect everything.
@@ -638,26 +662,7 @@ private:
   //! Where in the undo history are we?
   long m_historyPosition = -1;
 
-  /*! The start of the current selection.
-
-    - >0: the position of the cursors in characters from start
-    - -1: Currently no selection is active
-
-    If the selection has been done from right to left m_selectionStart>m_selectionEnd.
-  */
-  long m_selectionStart = -1;
-  /*! The end of the current selection.
-
-    - >0: the position of the cursors in characters from start
-    - -1: Currently no selection is active
-
-    If the selection has been done from right to left m_selectionStart>m_selectionEnd.
-  */
-  long m_selectionEnd = -1;
-  long m_oldSelectionStart = -1;
-  long m_oldSelectionEnd = -1;
-  long m_lastSelectionStart = -1;
-
+  Selection m_selection;
   wxCoord m_charHeight = 12;
   long m_paren1 = -1, m_paren2 = -1;
 
