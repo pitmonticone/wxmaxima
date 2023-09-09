@@ -44,8 +44,7 @@
 
 EditorCell::EditorCell(GroupCell *group, Configuration *config,
                        const wxString &text)
-  : Cell(group, config), m_text(text),
-    m_selection(&m_text)
+  : Cell(group, config), m_text(text)
 {
   InitBitFields();
   m_text.Replace(wxS("\u2028"), "\n");
@@ -95,7 +94,7 @@ void EditorCell::AddDrawParameter(wxString param) {
         commaNeededBefore = true;
     }
 
-    if (pos > GetSelection().CursorPosition())
+    if (pos > CursorPosition())
       break;
     else {
       ++ch;
@@ -125,12 +124,12 @@ void EditorCell::AddDrawParameter(wxString param) {
     param += wxS(",");
 
   wxString textAfterParameter =
-    m_text.Right(m_text.Length() - GetSelection().CursorPosition());
-  m_text = m_text.Left(GetSelection().CursorPosition());
+    m_text.Right(m_text.Length() - CursorPosition());
+  m_text = m_text.Left(CursorPosition());
   m_text.Trim();
   if (commaNeededBefore) {
     m_text += wxS(",");
-    GetSelection().CursorMove(1);
+    CursorMove(1);
   }
 
   wxStringTokenizer lines(param, wxS("\n"), wxTOKEN_RET_EMPTY_ALL);
@@ -140,7 +139,7 @@ void EditorCell::AddDrawParameter(wxString param) {
     wxString line = lines.GetNextToken();
     line.Trim(false);
     m_text += line;
-    GetSelection().CursorMove(line.Length());
+    CursorMove(line.Length());
   }
   m_text += textAfterParameter;
   StyleText();
@@ -153,7 +152,7 @@ void EditorCell::SearchStartedHere(size_t index) const {
 
 void EditorCell::SearchStartedHere() const {
   m_cellPointers->m_cellSearchStartedIn = const_cast<EditorCell *>(this);
-  m_cellPointers->m_indexSearchStartedAt = GetSelection().CursorPosition();
+  m_cellPointers->m_indexSearchStartedAt = CursorPosition();
 }
 
 void EditorCell::MouseSelectionStartedHere() const {
@@ -186,7 +185,7 @@ wxString EditorCell::GetFullCommandUnderCursor() {
         result += *ch;
     } else {
       if ((*ch == ';') || (*ch == '$')) {
-        if (GetSelection().CursorPosition() < pos)
+        if (CursorPosition() < pos)
           return result;
         result = wxEmptyString;
       }
@@ -248,8 +247,8 @@ wxString EditorCell::ToString(bool dontLimitToSelection) const {
   text.Replace(wxS("\u00a0"), wxS(" "));
 
   if (SelectionActive() && (!dontLimitToSelection)) {
-    auto start = GetSelection().Left();
-    auto end   = GetSelection().Right();
+    auto start = SelectionLeft();
+    auto end   = SelectionRight();
     if (end >= m_text.Length())
       end = m_text.Length() - 1;
     if (start < 0)
@@ -269,8 +268,8 @@ wxString EditorCell::ToMatlab(bool dontLimitToSelection) const {
   text.Replace(wxS("\u00a0"), wxS(" "));
 
   if (SelectionActive() && (!dontLimitToSelection)) {
-    auto start = GetSelection().Left();
-    auto end   = GetSelection().Right();
+    auto start = SelectionLeft();
+    auto end   = SelectionRight();
     if (end >= m_text.Length())
       end = m_text.Length() - 1;
     if (start < 0)
@@ -513,23 +512,23 @@ wxString EditorCell::ToXML() const {
 }
 
 void EditorCell::ConvertNumToUNicodeChar() {
-  if (GetSelection().CursorPosition() == 0)
+  if (CursorPosition() == 0)
     return;
   int numLen = 0;
-  while ((GetSelection().CursorPosition() > 0) &&
-         (((m_text[GetSelection().CursorPosition() - 1] >= '0') &&
-           (m_text[GetSelection().CursorPosition() - 1] <= '9')) ||
-          ((m_text[GetSelection().CursorPosition() - 1] >= 'a') &&
-           (m_text[GetSelection().CursorPosition() - 1] <= 'f')) ||
-          ((m_text[GetSelection().CursorPosition() - 1] >= 'A') &&
-           (m_text[GetSelection().CursorPosition() - 1] <= 'F')))) {
+  while ((CursorPosition() > 0) &&
+         (((m_text[CursorPosition() - 1] >= '0') &&
+           (m_text[CursorPosition() - 1] <= '9')) ||
+          ((m_text[CursorPosition() - 1] >= 'a') &&
+           (m_text[CursorPosition() - 1] <= 'f')) ||
+          ((m_text[CursorPosition() - 1] >= 'A') &&
+           (m_text[CursorPosition() - 1] <= 'F')))) {
     numLen++;
-    GetSelection().CursorMove(-1);
+    CursorMove(-1);
   }
 
   wxString numString =
-    m_text.SubString(GetSelection().CursorPosition(),
-		     GetSelection().CursorPosition() + numLen - 1);
+    m_text.SubString(CursorPosition(),
+		     CursorPosition() + numLen - 1);
   long number;
   if (!numString.ToLong(&number, 16))
     return;
@@ -539,9 +538,9 @@ void EditorCell::ConvertNumToUNicodeChar() {
     wxLogNull suppressConversationErrors;
     newChar = wxChar(number);
   }
-  m_text = m_text.Left(GetSelection().CursorPosition()) + newChar +
-    m_text.Right(m_text.Length() - GetSelection().CursorPosition() - numLen);
-  GetSelection().CursorMove(newChar.Length());
+  m_text = m_text.Left(CursorPosition()) + newChar +
+    m_text.Right(m_text.Length() - CursorPosition() - numLen);
+  CursorMove(newChar.Length());
 }
 
 bool EditorCell::IsZoomFactorChanged() const {
@@ -761,7 +760,7 @@ void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
         // Mark only text that won't be marked in the next step:
         // This would not only be unnecessary but also could cause
         // selections to flicker in very long texts
-        if ((!IsActive()) || (start != GetSelection().Left()))
+        if ((!IsActive()) || (start != SelectionLeft()))
           MarkSelection(dc, start, end, TS_EQUALSSELECTION);
         if (m_cellPointers->m_selectionString.Length() == 0)
           end++;
@@ -774,9 +773,9 @@ void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
 	//
 	// Mark selection
 	//
-	if (GetSelection().IsActive())
-	  MarkSelection(dc, GetSelection().Left(),
-			GetSelection().Right(), TS_SELECTION);
+	if (SelectionActive())
+	  MarkSelection(dc, SelectionLeft(),
+			SelectionRight(), TS_SELECTION);
 
 	//
 	// Matching parens - draw only if we don't have selection
@@ -876,7 +875,7 @@ void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
       size_t caretInLine = 0;
       size_t caretInColumn = 0;
 
-      PositionToXY(GetSelection().CursorPosition(), &caretInColumn, &caretInLine);
+      PositionToXY(CursorPosition(), &caretInColumn, &caretInLine);
 
       size_t lineWidth = GetLineWidth(caretInLine, caretInColumn);
 
@@ -938,7 +937,7 @@ void EditorCell::SetForeground(wxDC *dc) {
 
 wxString EditorCell::GetCurrentCommand() {
   // Discard all chars behind the cursor.
-  wxString lineTillCursor = m_text.Left(GetSelection().CursorPosition());
+  wxString lineTillCursor = m_text.Left(CursorPosition());
 
   wxString command;
   wxString possibleCommand;
@@ -1092,10 +1091,10 @@ bool EditorCell::HandleCtrlCommand(wxKeyEvent &ev) {
   case 'K': {
     ClearSelection();
     SaveValue();
-    size_t end = EndOfLine(GetSelection().CursorPosition());
-    if (end == GetSelection().CursorPosition())
+    size_t end = EndOfLine(CursorPosition());
+    if (end == CursorPosition())
       end++;
-    m_text = m_text.SubString(0, GetSelection().CursorPosition() - 1) +
+    m_text = m_text.SubString(0, CursorPosition() - 1) +
       m_text.SubString(end, m_text.length());
     m_isDirty = true;
     break;
@@ -1103,20 +1102,20 @@ bool EditorCell::HandleCtrlCommand(wxKeyEvent &ev) {
 
   case 'E': {
     ClearSelection();
-    size_t end = EndOfLine(GetSelection().CursorPosition());
+    size_t end = EndOfLine(CursorPosition());
     if (ev.ShiftDown())
-      GetSelection().SetSelection(GetSelection().CursorPosition(), end);
-    GetSelection().CursorPosition() = end;
+      SetSelection(CursorPosition(), end);
+    CursorPosition(end);
     m_displayCaret = true;
     break;
   }
 
   case 'A': {
     ClearSelection();
-    size_t start = BeginningOfLine(GetSelection().CursorPosition());
+    size_t start = BeginningOfLine(CursorPosition());
     if (ev.ShiftDown())
-      GetSelection().SetSelection(start, GetSelection().CursorPosition());
-    GetSelection().CursorPosition(start);
+      SetSelection(start, CursorPosition());
+    CursorPosition(start);
     m_displayCaret = true;
     break;
   }
@@ -1298,14 +1297,14 @@ size_t EditorCell::GetIndentDepth(wxString text, size_t positionOfCaret) {
 }
 
 void EditorCell::ProcessNewline(bool keepCursorAtStartOfLine) {
-  if (GetSelection().IsActive()) // we have a selection, delete it, then proceed
+  if (SelectionActive()) // we have a selection, delete it, then proceed
     {
       SaveValue();
-      auto start = GetSelection().Left();
-      auto end =   GetSelection().Right();
+      auto start = SelectionLeft();
+      auto end =   SelectionRight();
       m_text =
         m_text.SubString(0, start - 1) + m_text.SubString(end, m_text.Length());
-      GetSelection().CursorPosition(start);
+      CursorPosition(start);
       ClearSelection();
     }
 
@@ -1315,21 +1314,21 @@ void EditorCell::ProcessNewline(bool keepCursorAtStartOfLine) {
     // after indenting.
     bool cursorAtStartOfLine =
       keepCursorAtStartOfLine &&
-      (GetSelection().CursorPosition() == BeginningOfLine(GetSelection().CursorPosition()));
+      (CursorPosition() == BeginningOfLine(CursorPosition()));
 
     // If the cursor is part of the whitespace at the beginning of the line
     // we move it to its end if this makes sense.
     if (autoIndent) {
-      size_t i = BeginningOfLine(GetSelection().CursorPosition());
-      while ((i < GetSelection().CursorPosition()) && (m_text[i] == wxS(' ')))
+      size_t i = BeginningOfLine(CursorPosition());
+      while ((i < CursorPosition()) && (m_text[i] == wxS(' ')))
         ++i;
-      if (i == GetSelection().CursorPosition())
-        while ((GetSelection().CursorPosition() < m_text.Length() - 1) &&
-               (m_text[GetSelection().CursorPosition()] == wxS(' ')))
-          GetSelection().CursorMove(1);
+      if (i == CursorPosition())
+        while ((CursorPosition() < m_text.Length() - 1) &&
+               (m_text[CursorPosition()] == wxS(' ')))
+          CursorMove(1);
     }
 
-    size_t indentChars = GetIndentDepth(m_text, GetSelection().CursorPosition());
+    size_t indentChars = GetIndentDepth(m_text, CursorPosition());
 
     // The string we indent with.
     wxString indentString;
@@ -1337,7 +1336,7 @@ void EditorCell::ProcessNewline(bool keepCursorAtStartOfLine) {
       for (size_t i = 0; i < indentChars; i++)
         indentString += wxS(" ");
 
-    wxString newLines = m_text.SubString(GetSelection().CursorPosition(), m_text.Length());
+    wxString newLines = m_text.SubString(CursorPosition(), m_text.Length());
     if (autoIndent) {
       // Remove leading spaces from the text that follows the cursor
       wxString newLines_noleadingSpaces;
@@ -1350,19 +1349,19 @@ void EditorCell::ProcessNewline(bool keepCursorAtStartOfLine) {
         newLines_noleadingSpaces += *it;
       newLines = newLines_noleadingSpaces;
     }
-    m_text = m_text.SubString(0, GetSelection().CursorPosition() - 1) + wxS("\n") +
+    m_text = m_text.SubString(0, CursorPosition() - 1) + wxS("\n") +
       indentString + newLines;
-    GetSelection().CursorMove(1);
+    CursorMove(1);
     if ((indentChars > 0) && (autoIndent)) {
-      GetSelection().CursorPosition(BeginningOfLine(GetSelection().CursorPosition()));
-      GetSelection().CursorMove(indentChars);
+      CursorPosition(BeginningOfLine(CursorPosition()));
+      CursorMove(indentChars);
     }
     m_isDirty = true;
     m_containsChanges = true;
 
     if ((!m_configuration->CursorJump()) ||
         ((cursorAtStartOfLine) && (!autoIndent)))
-      GetSelection().CursorPosition(BeginningOfLine(GetSelection().CursorPosition()));
+      CursorPosition(BeginningOfLine(CursorPosition()));
   }
 }
 
@@ -1396,10 +1395,10 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
   switch (event.GetKeyCode()) {
   case WXK_LEFT:
     {
-      auto pos = GetSelection().CursorPosition();
+      auto pos = CursorPosition();
       SaveValue();
       if (event.ControlDown()) {
-	size_t lastpos = GetSelection().CursorPosition();
+	size_t lastpos = CursorPosition();
 	while ((pos > 0) &&
 	       (wxIsalnum(m_text[pos - 1]) ||
 		m_text[pos - 1] == wxS('_') ||
@@ -1433,15 +1432,15 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
       pos--;
 
     if (event.ShiftDown())
-      GetSelection().End(pos);
+      SelectionEnd(pos);
     else
-      GetSelection().CursorPosition(pos);
+      CursorPosition(pos);
     }
     break;
 
     case WXK_RIGHT:
       {
-	auto pos = GetSelection().CursorPosition();
+	auto pos = CursorPosition();
 	SaveValue();
 
 	if (event.ControlDown()) {
@@ -1482,15 +1481,15 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
 	  pos++;
 
 	if (event.ShiftDown())
-	  GetSelection().End(pos);
+	  SelectionEnd(pos);
 	else
-	  GetSelection().CursorPosition(pos);
+	  CursorPosition(pos);
 
 	break;
       }
       case WXK_END:
 	{
-	  auto pos = GetSelection().CursorPosition();
+	  auto pos = CursorPosition();
 	  SaveValue();
 	  
 	  if (event.ControlDown()) {
@@ -1505,14 +1504,14 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
 	  }
 	  
 	if (event.ShiftDown())
-	  GetSelection().End(pos);
+	  SelectionEnd(pos);
 	else
-	  GetSelection().CursorPosition(pos);
+	  CursorPosition(pos);
 	break;
 	}
   case WXK_HOME:
     {
-      auto pos = GetSelection().CursorPosition();
+      auto pos = CursorPosition();
       SaveValue();
       
       if (event.ControlDown())
@@ -1524,9 +1523,9 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
       }
       
       if (event.ShiftDown())
-	GetSelection().End(pos);
+	SelectionEnd(pos);
       else
-	GetSelection().CursorPosition(pos);
+	CursorPosition(pos);
       break;
     }
     break;
@@ -1539,7 +1538,7 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
   case WXK_NUMPAD_NEXT:
 #endif
     {
-      auto pos = GetSelection().CursorPosition();
+      auto pos = CursorPosition();
       SaveValue();
       size_t column;
       size_t line;
@@ -1564,16 +1563,16 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
       }
       
       if (event.ShiftDown())
-	GetSelection().End(pos);
+	SelectionEnd(pos);
       else
-	GetSelection().CursorPosition(pos);
+	CursorPosition(pos);
       break;
     }
     break;
 
   case WXK_DOWN:
     {
-      auto pos = GetSelection().CursorPosition();
+      auto pos = CursorPosition();
       SaveValue();
       size_t column, line;
       PositionToXY(pos, &column, &line); // get current line
@@ -1592,9 +1591,9 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
       }
 
       if (event.ShiftDown())
-	GetSelection().End(pos);
+	SelectionEnd(pos);
       else
-	GetSelection().CursorPosition(pos);
+	CursorPosition(pos);
     }
     break;
 
@@ -1606,7 +1605,7 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
   case WXK_NUMPAD_PRIOR:
 #endif
     {
-      auto pos = GetSelection().CursorPosition();
+      auto pos = CursorPosition();
       SaveValue();
 
       size_t column, line;
@@ -1631,15 +1630,15 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
       }
 
       if (event.ShiftDown())
-	GetSelection().End(pos);
+	SelectionEnd(pos);
       else
-	GetSelection().CursorPosition(pos);
+	CursorPosition(pos);
     }
     break;
 
   case WXK_UP:
     {
-      auto pos = GetSelection().CursorPosition();
+      auto pos = CursorPosition();
       SaveValue();
 
       size_t column, line;
@@ -1657,9 +1656,9 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
       }
 
       if (event.ShiftDown())
-	GetSelection().End(pos);
+	SelectionEnd(pos);
       else
-	GetSelection().CursorPosition(pos);
+	CursorPosition(pos);
     }
     break;
 
@@ -1673,23 +1672,23 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
     // On windows CMD+WXK_BACK is passed to us as CMD+WXK_DELETE.
     if (!event.CmdDown()) {
       SaveValue();
-      if (!GetSelection().IsActive()) {
-        if (GetSelection().CursorPosition() < m_text.Length()) {
+      if (!SelectionActive()) {
+        if (CursorPosition() < m_text.Length()) {
           m_isDirty = true;
           m_containsChanges = true;
-          m_text = m_text.SubString(0, GetSelection().CursorPosition() - 1) +
-	    m_text.SubString(GetSelection().CursorPosition() + 1, m_text.Length());
+          m_text = m_text.SubString(0, CursorPosition() - 1) +
+	    m_text.SubString(CursorPosition() + 1, m_text.Length());
         }
       } else {
         m_isDirty = true;
         m_containsChanges = true;
         SaveValue();
         m_saveValue = true;
-        auto start = GetSelection().Left();
-        auto end   = GetSelection().Right();
+        auto start = SelectionLeft();
+        auto end   = SelectionRight();
         m_text = m_text.SubString(0, start - 1) +
 	  m_text.SubString(end, m_text.Length());
-        GetSelection().CursorPosition(start);
+        CursorPosition(start);
       }
     } else {
       // Ctrl+Backspace is pressed.
@@ -1697,8 +1696,8 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
       m_containsChanges = true;
       m_isDirty = true;
 
-      size_t lastpos = GetSelection().CursorPosition();
-      size_t pos     = GetSelection().CursorPosition();
+      size_t lastpos = CursorPosition();
+      size_t pos     = CursorPosition();
       // Delete characters until the end of the current word or number
       while (pos > 0 &&
              wxIsalnum(m_text[pos - 1])) {
@@ -1720,7 +1719,7 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
         m_text = m_text.SubString(0, pos - 1) +
 	  m_text.SubString(pos + 1, m_text.Length());
       }
-      GetSelection().CursorPosition(pos);
+      CursorPosition(pos);
     }
     StyleText();
     break;
@@ -1728,13 +1727,13 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
   case WXK_BACK:
     SaveValue();
     {
-      auto pos = GetSelection().CursorPosition();
+      auto pos = CursorPosition();
       if (SelectionActive()) {
 	m_saveValue = true;
 	m_containsChanges = true;
 	m_isDirty = true;
-	auto start = GetSelection().Left();
-	auto end   = GetSelection().Right();
+	auto start = SelectionLeft();
+	auto end   = SelectionRight();
 	m_text = m_text.SubString(0, start - 1) +
 	  m_text.SubString(end, m_text.Length());
 	pos = start;
@@ -1805,13 +1804,13 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
 	}
       }
       StyleText();
-      GetSelection().CursorPosition(pos);
+      CursorPosition(pos);
     }
     break;
 
   case WXK_TAB:
     {
-      auto pos = GetSelection().CursorPosition();
+      auto pos = CursorPosition();
       
       m_isDirty = true;
       if (!FindNextTemplate(event.ShiftDown())) {
@@ -1821,8 +1820,8 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
 	    // Selection active and Tab
 	    SaveValue();
 
-	    auto start = GetSelection().Left();
-	    auto end   = GetSelection().Right();
+	    auto start = SelectionLeft();
+	    auto end   = SelectionRight();
 	    size_t newLineIndex = wxMin(m_text.find(wxS('\n'), start),
 					m_text.find(wxS('\r'), start));
 
@@ -1899,7 +1898,7 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
 	  }
 	}
       }
-      GetSelection().CursorPosition(pos);
+      CursorPosition(pos);
     }
     StyleText();
     break;
@@ -1956,70 +1955,70 @@ bool EditorCell::HandleOrdinaryKey(wxKeyEvent &event) {
   // if we have a selection either put parens around it (and don't write the
   // letter afterwards) or delete selection and write letter (insertLetter =
   // true).
-  if ((GetSelection().Start() > 0) && (GetSelection().IsActive())) {
+  if ((SelectionStart() > 0) && (SelectionActive())) {
     SaveValue();
-    auto start = GetSelection().Left();
-    auto end   = GetSelection().Right();
+    auto start = SelectionLeft();
+    auto end   = SelectionRight();
 
     switch (keyCode) {
     case '(':
       m_text = m_text.SubString(0, start - 1) + wxS("(") +
 	m_text.SubString(start, end - 1) + wxS(")") +
 	m_text.SubString(end, m_text.Length());
-      GetSelection().CursorPosition(start);
+      CursorPosition(start);
       insertLetter = false;
       break;
     case '\"':
       m_text = m_text.SubString(0, start - 1) + wxS("\"") +
 	m_text.SubString(start, end - 1) + wxS("\"") +
 	m_text.SubString(end, m_text.Length());
-      GetSelection().CursorPosition(start);
+      CursorPosition(start);
       insertLetter = false;
       break;
     case '{':
       m_text = m_text.SubString(0, start - 1) + wxS("{") +
 	m_text.SubString(start, end - 1) + wxS("}") +
 	m_text.SubString(end, m_text.Length());
-      GetSelection().CursorPosition(start);
+      CursorPosition(start);
       insertLetter = false;
       break;
     case '[':
       m_text = m_text.SubString(0, start - 1) + wxS("[") +
 	m_text.SubString(start, end - 1) + wxS("]") +
 	m_text.SubString(end, m_text.Length());
-      GetSelection().CursorPosition(start);
+      CursorPosition(start);
       insertLetter = false;
       break;
     case ')':
       m_text = m_text.SubString(0, start - 1) + wxS("(") +
 	m_text.SubString(start, end - 1) + wxS(")") +
 	m_text.SubString(end, m_text.Length());
-      GetSelection().CursorPosition(end + 2);
+      CursorPosition(end + 2);
       insertLetter = false;
       break;
     case '}':
       m_text = m_text.SubString(0, start - 1) + wxS("{") +
 	m_text.SubString(start, end - 1) + wxS("}") +
 	m_text.SubString(end, m_text.Length());
-      GetSelection().CursorPosition(end + 2);
+      CursorPosition(end + 2);
       insertLetter = false;
       break;
     case ']':
       m_text = m_text.SubString(0, start - 1) + wxS("[") +
 	m_text.SubString(start, end - 1) + wxS("]") +
 	m_text.SubString(end, m_text.Length());
-      GetSelection().CursorPosition(end + 2);
+      CursorPosition(end + 2);
       insertLetter = false;
       break;
     default: // delete selection
       m_text = m_text.SubString(0, start - 1) +
 	m_text.SubString(end, m_text.Length());
-      GetSelection().CursorPosition(end + 2);
+      CursorPosition(end + 2);
       break;
     }
     ClearSelection();
     StyleText();
-  } // end if (GetSelection().IsActive())
+  } // end if (SelectionActive())
 
   // insert letter if we didn't insert brackets around selection
   if (insertLetter) {
@@ -2030,51 +2029,51 @@ bool EditorCell::HandleOrdinaryKey(wxKeyEvent &event) {
     if (event.ShiftDown())
       chr.Replace(wxS(" "), wxS("\u00a0"));
 
-    m_text = m_text.SubString(0, GetSelection().CursorPosition() - 1) + chr +
-      m_text.SubString(GetSelection().CursorPosition(), m_text.Length());
+    m_text = m_text.SubString(0, CursorPosition() - 1) + chr +
+      m_text.SubString(CursorPosition(), m_text.Length());
 
-    GetSelection().CursorMove(1);
+    CursorMove(1);
 
     if (m_configuration->GetMatchParens()) {
       switch (keyCode) {
       case '(':
-        m_text = m_text.SubString(0, GetSelection().CursorPosition() - 1) + wxS(")") +
-	  m_text.SubString(GetSelection().CursorPosition(), m_text.Length());
+        m_text = m_text.SubString(0, CursorPosition() - 1) + wxS(")") +
+	  m_text.SubString(CursorPosition(), m_text.Length());
         break;
       case '[':
-        m_text = m_text.SubString(0, GetSelection().CursorPosition() - 1) + wxS("]") +
-	  m_text.SubString(GetSelection().CursorPosition(), m_text.Length());
+        m_text = m_text.SubString(0, CursorPosition() - 1) + wxS("]") +
+	  m_text.SubString(CursorPosition(), m_text.Length());
         break;
       case '{':
-        m_text = m_text.SubString(0, GetSelection().CursorPosition() - 1) + wxS("}") +
-	  m_text.SubString(GetSelection().CursorPosition(), m_text.Length());
+        m_text = m_text.SubString(0, CursorPosition() - 1) + wxS("}") +
+	  m_text.SubString(CursorPosition(), m_text.Length());
         break;
       case '"':
-        if (GetSelection().CursorPosition() < m_text.Length() &&
-            m_text.GetChar(GetSelection().CursorPosition()) == '"')
-          m_text = m_text.SubString(0, GetSelection().CursorPosition() - 2) +
-	    m_text.SubString(GetSelection().CursorPosition(), m_text.Length());
+        if (CursorPosition() < m_text.Length() &&
+            m_text.GetChar(CursorPosition()) == '"')
+          m_text = m_text.SubString(0, CursorPosition() - 2) +
+	    m_text.SubString(CursorPosition(), m_text.Length());
         else
-          m_text = m_text.SubString(0, GetSelection().CursorPosition() - 1) + wxS("\"") +
-	    m_text.SubString(GetSelection().CursorPosition(), m_text.Length());
+          m_text = m_text.SubString(0, CursorPosition() - 1) + wxS("\"") +
+	    m_text.SubString(CursorPosition(), m_text.Length());
         break;
       case ')': // jump over ')'
-        if (GetSelection().CursorPosition() < m_text.Length() &&
-            m_text.GetChar(GetSelection().CursorPosition()) == ')')
-          m_text = m_text.SubString(0, GetSelection().CursorPosition() - 2) +
-	    m_text.SubString(GetSelection().CursorPosition(), m_text.Length());
+        if (CursorPosition() < m_text.Length() &&
+            m_text.GetChar(CursorPosition()) == ')')
+          m_text = m_text.SubString(0, CursorPosition() - 2) +
+	    m_text.SubString(CursorPosition(), m_text.Length());
         break;
       case ']': // jump over ']'
-        if (GetSelection().CursorPosition() < m_text.Length() &&
-            m_text.GetChar(GetSelection().CursorPosition()) == ']')
-          m_text = m_text.SubString(0, GetSelection().CursorPosition() - 2) +
-	    m_text.SubString(GetSelection().CursorPosition(), m_text.Length());
+        if (CursorPosition() < m_text.Length() &&
+            m_text.GetChar(CursorPosition()) == ']')
+          m_text = m_text.SubString(0, CursorPosition() - 2) +
+	    m_text.SubString(CursorPosition(), m_text.Length());
         break;
       case '}': // jump over '}'
-        if (GetSelection().CursorPosition() < m_text.Length() &&
-            m_text.GetChar(GetSelection().CursorPosition()) == '}')
-          m_text = m_text.SubString(0, GetSelection().CursorPosition() - 2) +
-	    m_text.SubString(GetSelection().CursorPosition(), m_text.Length());
+        if (CursorPosition() < m_text.Length() &&
+            m_text.GetChar(CursorPosition()) == '}')
+          m_text = m_text.SubString(0, CursorPosition() - 2) +
+	    m_text.SubString(CursorPosition(), m_text.Length());
         break;
       case '+':
         // case '-': // this could mean negative.
@@ -2086,19 +2085,19 @@ bool EditorCell::HandleOrdinaryKey(wxKeyEvent &event) {
         size_t len = m_text.Length();
         if (m_configuration->GetInsertAns()) {
           // Insert an "%" before an operator that begins this cell
-          if (len == 1 && GetSelection().CursorPosition() == 1) {
-            m_text = m_text.SubString(0, GetSelection().CursorPosition() - 2) + wxS("%") +
-	      m_text.SubString(GetSelection().CursorPosition() - 1, m_text.Length());
-            GetSelection().CursorMove(1);
+          if (len == 1 && CursorPosition() == 1) {
+            m_text = m_text.SubString(0, CursorPosition() - 2) + wxS("%") +
+	      m_text.SubString(CursorPosition() - 1, m_text.Length());
+            CursorMove(1);
           }
 
           // If this operator happens to be the first letter of a comment start
           // sign we remove the "%" again as the unability to begin a code cell
           // with a comment in the obvious way tends to surprise users.
-          if ((len == 3) && (GetSelection().CursorPosition() == 3) &&
+          if ((len == 3) && (CursorPosition() == 3) &&
               (m_text.StartsWith(wxS("%/*")))) {
-            m_text = m_text.SubString(GetSelection().CursorPosition() - 2, m_text.Length());
-            GetSelection().CursorMove(-1);
+            m_text = m_text.SubString(CursorPosition() - 2, m_text.Length());
+            CursorMove(-1);
           }
         }
         break;
@@ -2119,7 +2118,7 @@ bool EditorCell::HandleOrdinaryKey(wxKeyEvent &event) {
  * @return true if matching quotation marks were found; false otherwise
  */
 bool EditorCell::FindMatchingQuotes() {
-  if (GetSelection().CursorPosition() < 0) {
+  if (CursorPosition() < 0) {
     m_paren1 = m_paren2 = -1;
     return false;
   }
@@ -2129,14 +2128,14 @@ bool EditorCell::FindMatchingQuotes() {
     if ((tok.GetText().StartsWith(wxS("\""))) &&
         (tok.GetText().EndsWith(wxS("\"")))) {
       size_t tokenEnd = pos + tok.GetText().Length() - 1;
-      if (((unsigned)GetSelection().CursorPosition() == tokenEnd) ||
-           (GetSelection().CursorPosition() == pos)) {
+      if (((unsigned)CursorPosition() == tokenEnd) ||
+           (CursorPosition() == pos)) {
         m_paren1 = pos;
         m_paren2 = tokenEnd;
         return true;
       }
     }
-    if (pos > GetSelection().CursorPosition())
+    if (pos > CursorPosition())
       return false;
     pos += tok.GetText().Length();
   }
@@ -2145,10 +2144,10 @@ bool EditorCell::FindMatchingQuotes() {
 
 void EditorCell::FindMatchingParens() {
   m_paren1 = m_paren2 = -1;
-  if (GetSelection().CursorPosition() >= m_text.Length())
+  if (CursorPosition() >= m_text.Length())
     return;
 
-  wxChar charUnderCursor = m_text.GetChar(GetSelection().CursorPosition());
+  wxChar charUnderCursor = m_text.GetChar(CursorPosition());
   if (charUnderCursor == wxS('\"')) {
     FindMatchingQuotes();
     return;
@@ -2158,7 +2157,7 @@ void EditorCell::FindMatchingParens() {
     size_t parenLevel = 0;
     size_t pos = 0;
     for (auto const &tok : m_tokens) {
-      if (pos >= GetSelection().CursorPosition()) {
+      if (pos >= CursorPosition()) {
         if ((tok.GetText().StartsWith(wxS("("))) ||
             (tok.GetText().StartsWith(wxS("["))) ||
             (tok.GetText().StartsWith(wxS("{"))))
@@ -2169,7 +2168,7 @@ void EditorCell::FindMatchingParens() {
               (tok.GetText().StartsWith(wxS("}")))) {
             parenLevel--;
             if (parenLevel == 0) {
-              m_paren1 = GetSelection().CursorPosition();
+              m_paren1 = CursorPosition();
               m_paren2 = pos;
               return;
             }
@@ -2186,14 +2185,14 @@ void EditorCell::FindMatchingParens() {
     size_t pos = m_text.Length() - 1;
     auto const tokens = MaximaTokenizer(m_text, m_configuration).PopTokens();
     for (auto tok = tokens.rbegin(); tok != tokens.rend(); ++tok) {
-      if (pos <= GetSelection().CursorPosition()) {
+      if (pos <= CursorPosition()) {
         if ((tok->GetText().StartsWith(wxS("("))) ||
             (tok->GetText().StartsWith(wxS("["))) ||
             (tok->GetText().StartsWith(wxS("{")))) {
           parenLevel--;
           if (parenLevel == 0) {
             m_paren1 = pos;
-            m_paren2 = GetSelection().CursorPosition();
+            m_paren2 = CursorPosition();
             return;
           }
         } else {
@@ -2352,7 +2351,7 @@ wxPoint EditorCell::PositionToPoint(int pos) {
   size_t cX, cY;
 
   if (pos < 0)
-    pos = GetSelection().CursorPosition();
+    pos = CursorPosition();
 
   PositionToXY(pos, &cX, &cY);
 
@@ -2367,7 +2366,7 @@ wxPoint EditorCell::PositionToPoint(int pos) {
 void EditorCell::SelectPointText(const wxPoint point) {
   wxString s;
   SetFont(m_configuration->GetRecalcDC());
-  auto pos = GetSelection().CursorPosition();
+  auto pos = CursorPosition();
   ClearSelection();
   wxPoint posInCell(point);
 
@@ -2470,23 +2469,23 @@ void EditorCell::SelectPointText(const wxPoint point) {
     m_displayCaret = true;
     m_caretColumn = -1;
   }
-  GetSelection().CursorPosition(pos);
+  CursorPosition(pos);
 }
 
 void EditorCell::SelectRectText(const wxPoint one, const wxPoint two) {
   SelectPointText(one);
-  size_t start = GetSelection().CursorPosition();
+  size_t start = CursorPosition();
   SelectPointText(two);
   m_paren2 = m_paren1 = -1;
   m_caretColumn = -1;
-  GetSelection().Start(start);
+  SelectionStart(start);
 }
 
 // IsPointInSelection
 // Return true if coordinates "point" fall into selection
 // If they don't or there is no selection it returns false
 bool EditorCell::IsPointInSelection(wxPoint point) {
-  if ((!GetSelection().IsActive()) || !IsActive())
+  if ((!SelectionActive()) || !IsActive())
     return false;
 
   wxRect rect = GetRect();
@@ -2526,7 +2525,7 @@ bool EditorCell::IsPointInSelection(wxPoint point) {
          text.GetChar(positionOfCaret) != '\r') {
     wxCoord width;
     width =
-      GetTextSize(text.SubString(lineStart, GetSelection().CursorPosition())).GetWidth();
+      GetTextSize(text.SubString(lineStart, CursorPosition())).GetWidth();
     if (width > posInCell.x)
       break;
     positionOfCaret++;
@@ -2534,14 +2533,14 @@ bool EditorCell::IsPointInSelection(wxPoint point) {
   positionOfCaret = wxMin(positionOfCaret, (signed)text.Length());
   if (positionOfCaret < -1)
     positionOfCaret = -1;
-  return !((GetSelection().Start() >= positionOfCaret) ||
-           (GetSelection().End() <= positionOfCaret));
+  return !((SelectionStart() >= positionOfCaret) ||
+           (SelectionEnd() <= positionOfCaret));
 }
 
 wxString EditorCell::DivideAtCaret() {
   wxString original = m_text;
   m_containsChanges = true;
-  wxString newText = m_text.SubString(0, GetSelection().CursorPosition() - 1);
+  wxString newText = m_text.SubString(0, CursorPosition() - 1);
 
   // Remove an eventual newline from the end of the old cell
   // that would appear if the cell is divided at the beginning of a line.
@@ -2559,7 +2558,7 @@ wxString EditorCell::DivideAtCaret() {
   }
 
   SetValue(newText);
-  wxString retval = original.SubString(GetSelection().CursorPosition(), original.Length());
+  wxString retval = original.SubString(CursorPosition(), original.Length());
   // Remove an eventual newline from the beginning of a new cell
   // that would appear if the cell is divided at the end of a line.
   if (retval.Length() > 0) {
@@ -2578,31 +2577,30 @@ wxString EditorCell::DivideAtCaret() {
   return retval;
 }
 
-void EditorCell::SetSelection(size_t start, size_t end) {
-  m_selectionChanged = true;
-  GetSelection().SetSelection(start, end);
-  if (!GetSelection().IsActive())
-    m_cellPointers->m_selectionString = wxEmptyString;
-  else
-    m_cellPointers->m_selectionString =
-      m_text.SubString(GetSelection().Left(),
-			 GetSelection().Right() - 1);
+void EditorCell::UpdateSelectionString() {
+  wxString selectionString = m_cellPointers->m_selectionString;
+  m_cellPointers->m_selectionString =
+    m_text.SubString(SelectionLeft(),
+		     SelectionRight() - 1);
   m_cellPointers->m_selectionString.Replace(wxS('\r'), wxS(' '));
+  if(m_cellPointers->m_selectionString != selectionString)
+    m_selectionChanged = true;
+
 }
 
 void EditorCell::CommentSelection() {
-  if (!GetSelection().IsActive())
+  if (!SelectionActive())
     return;
   m_containsChanges = true;
   m_isDirty = true;
-  SetValue(m_text.SubString(0, GetSelection().Start() - 1) + wxS("/*") +
-           m_text.SubString(GetSelection().Start(), GetSelection().End() - 1) + wxS("*/") +
-           m_text.SubString(GetSelection().End(), m_text.Length()));
-  GetSelection().CursorPosition(wxMin(GetSelection().End() + 4, m_text.Length()));
+  SetValue(m_text.SubString(0, SelectionStart() - 1) + wxS("/*") +
+           m_text.SubString(SelectionStart(), SelectionEnd() - 1) + wxS("*/") +
+           m_text.SubString(SelectionEnd(), m_text.Length()));
+  CursorPosition(wxMin(SelectionEnd() + 4, m_text.Length()));
 }
 
 wxString EditorCell::GetWordUnderCaret() {
-  size_t start = GetSelection().CursorPosition();
+  size_t start = CursorPosition();
   if (start >= m_text.Length())
     start = m_text.Length();
 
@@ -2661,7 +2659,7 @@ wxString EditorCell::SelectWordUnderCaret(bool WXUNUSED(selectParens),
         !(*it == '%') && !((*it == '\"') && includeDoubleQuotes)) {
       // !!toRight is 0, if toRight is false or guaranteed to be 1, if toRight
       // is true
-      if (pos >= GetSelection().CursorPosition() + !!toRight)
+      if (pos >= CursorPosition() + !!toRight)
         break;
       else
         start = pos + 1;
@@ -2680,8 +2678,8 @@ wxString EditorCell::SelectWordUnderCaret(bool WXUNUSED(selectParens),
 bool EditorCell::CopyToClipboard() const {
   wxASSERT_MSG(!wxTheClipboard->IsOpened(),
                _("Bug: The clipboard is already opened"));
-  auto start = GetSelection().Left();
-  auto end = GetSelection().Right() - 1;
+  auto start = SelectionLeft();
+  auto end = SelectionRight() - 1;
   if (end > m_text.Length())
     end = m_text.Length();
   wxString s = m_text.SubString(start, end);
@@ -2708,7 +2706,7 @@ bool EditorCell::CopyToClipboard() const {
 }
 
 bool EditorCell::CutToClipboard() {
-  if (!GetSelection().IsActive())
+  if (!SelectionActive())
     return false;
 
   SaveValue();
@@ -2717,9 +2715,9 @@ bool EditorCell::CutToClipboard() {
   if (!CopyToClipboard())
     return false;
 
-  auto start = GetSelection().Left();
-  auto end = GetSelection().Right();
-  GetSelection().CursorPosition(start);
+  auto start = SelectionLeft();
+  auto end = SelectionRight();
+  CursorPosition(start);
 
   // We cannot use SetValue() here, since SetValue() tends to move the cursor.
   m_text =
@@ -2740,7 +2738,7 @@ void EditorCell::InsertText(wxString text) {
   m_containsChanges = true;
 
   text =
-    TabExpand(text, GetSelection().CursorPosition() - BeginningOfLine(GetSelection().CursorPosition()));
+    TabExpand(text, CursorPosition() - BeginningOfLine(CursorPosition()));
 
   ReplaceSelection(GetSelectionString(), text);
 
@@ -2831,13 +2829,13 @@ size_t EditorCell::GetLineWidth(size_t line, size_t pos) {
 void EditorCell::SetState(const HistoryEntry &state) {
   m_text = state.text;
   StyleText();
-  GetSelection().CursorPosition(state.caretPosition);
+  CursorPosition(state.caretPosition);
   SetSelection(state.selStart, state.selEnd);
 }
 
 void EditorCell::AppendStateToHistory() {
-  m_history.emplace_back(m_text, GetSelection().CursorPosition(), GetSelection().Start(),
-                         GetSelection().End());
+  m_history.emplace_back(m_text, CursorPosition(), SelectionStart(),
+                         SelectionEnd());
 }
 
 bool EditorCell::IsActive() const {
@@ -3329,35 +3327,35 @@ void EditorCell::SetValue(const wxString &text) {
     if (m_configuration->GetMatchParens()) {
       if (text == wxS("(")) {
         m_text = wxS("()");
-        GetSelection().CursorPosition(0);
+        CursorPosition(0);
       } else if (text == wxS("[")) {
         m_text = wxS("[]");
-        GetSelection().CursorPosition(1);
+        CursorPosition(1);
       } else if (text == wxS("{")) {
         m_text = wxS("{}");
-        GetSelection().CursorPosition(1);
+        CursorPosition(1);
       } else if (text == wxS("\"")) {
         m_text = wxS("\"\"");
-        GetSelection().CursorPosition(1);
+        CursorPosition(1);
       } else {
         m_text = text;
-        GetSelection().CursorPosition(m_text.Length());
+        CursorPosition(m_text.Length());
       }
     } else {
       m_text = text;
-        GetSelection().CursorPosition(m_text.Length());
+        CursorPosition(m_text.Length());
     }
 
     if (m_configuration->GetInsertAns()) {
       if (m_text == wxS("+") || m_text == wxS("*") || m_text == wxS("/") ||
           m_text == wxS("^") || m_text == wxS("=") || m_text == wxS(",")) {
         m_text = wxS("%") + m_text;
-        GetSelection().CursorPosition(m_text.Length());
+        CursorPosition(m_text.Length());
       }
     }
   } else {
     m_text = text;
-        GetSelection().CursorPosition(m_text.Length());
+        CursorPosition(m_text.Length());
   }
 
   FindMatchingParens();
@@ -3418,7 +3416,7 @@ size_t EditorCell::ReplaceAll(wxString oldString, const wxString &newString,
   }
 
   // If text is selected setting the selection again updates m_selectionString
-  SetSelection(GetSelection().Start(), GetSelection().End());
+  SetSelection(SelectionStart(), SelectionEnd());
 
   m_text.Replace(wxS("\u2028"), "\n");
   m_text.Replace(wxS("\u2029"), "\n");
@@ -3443,7 +3441,7 @@ size_t EditorCell::ReplaceAll_RegEx(wxString oldString, const wxString &newStrin
       m_containsChanges = true;
       ClearSelection();
       StyleText();
-      SetSelection(GetSelection().Start(), GetSelection().End());
+      SetSelection(SelectionStart(), SelectionEnd());
     }
   if (count > 0) {
     m_text = newText;
@@ -3453,7 +3451,7 @@ size_t EditorCell::ReplaceAll_RegEx(wxString oldString, const wxString &newStrin
   }
   
   // If text is selected setting the selection again updates m_selectionString
-  SetSelection(GetSelection().Start(), GetSelection().End());
+  SetSelection(SelectionStart(), SelectionEnd());
   
   m_text.Replace(wxS("\u2028"), "\n");
   m_text.Replace(wxS("\u2029"), "\n");
@@ -3466,9 +3464,9 @@ bool EditorCell::FindNext(wxString str, const bool &down,
   // If the search string is empty we prepare everything for a new search
   if (str.IsEmpty()) {
     if (down)
-      GetSelection().CursorPosition(0);
+      CursorPosition(0);
     else
-      GetSelection().CursorPosition(m_text.Length());
+      CursorPosition(m_text.Length());
     return false;
   }
 
@@ -3492,33 +3490,33 @@ bool EditorCell::FindNext(wxString str, const bool &down,
   if (IsActive()) {
     // If the last search already has marked a match for our word we want
     // to search for the next match.
-    if ((GetSelection().SelectionLength() == str.Length()) &&
-        (text.Right(text.Length() - GetSelection().Left())
+    if ((SelectionLength() == str.Length()) &&
+        (text.Right(text.Length() - SelectionLeft())
 	 .StartsWith(str))) {
       if (down)
-        start = GetSelection().Left() + 1;
+        start = SelectionLeft() + 1;
       else
-        start = GetSelection().Right() - 1;
+        start = SelectionRight() - 1;
       if((start < 0) || (start >= m_text.Length()))
 	return false;
     } else {
       // We are at the start of a match, but the search expression has changed
-      if (GetSelection().Start() > 0) {
+      if (SelectionStart() > 0) {
         if (down)
-          start = GetSelection().Left() + 1;
+          start = SelectionLeft() + 1;
         else
-          start = GetSelection().Right() - 1;
+          start = SelectionRight() - 1;
 	if((start < 0) || (start >= m_text.Length()))
 	  return false;
       } else {
-	start = GetSelection().CursorPosition();
+	start = CursorPosition();
       }
     }
   } else { // Inactive cell => try to make sure we start at a sane position
     if (down) {
-      GetSelection().CursorPosition(0);
+      CursorPosition(0);
     } else {
-      GetSelection().CursorPosition(m_text.Length());
+      CursorPosition(m_text.Length());
     }
   }
   size_t strStart = wxNOT_FOUND;
@@ -3529,16 +3527,16 @@ bool EditorCell::FindNext(wxString str, const bool &down,
 
   if (strStart != wxNOT_FOUND) {
     if (down)
-      GetSelection().SetSelection(strStart, strStart + str.Length());
+      SetSelection(strStart, strStart + str.Length());
     else
-      GetSelection().SetSelection(strStart + str.Length(), strStart);
+      SetSelection(strStart + str.Length(), strStart);
     return true;
   }
   if (IsActive()) {
     if (down) {
-      GetSelection().CursorPosition(0);
+      CursorPosition(0);
     } else {
-      GetSelection().CursorPosition(m_text.Length());
+      CursorPosition(m_text.Length());
     }
   }
   return false;
@@ -3564,26 +3562,26 @@ bool EditorCell::FindNext_RegEx(wxString str, const bool &down) {
     // If the last search already has marked a match for our word we want
     // to search for the next match.
     if (
-        (GetSelection().SelectionLength() == str.Length()) &&
-        (text.Right(text.Length() - GetSelection().Left())
+        (SelectionLength() == str.Length()) &&
+        (text.Right(text.Length() - SelectionLeft())
 	 .StartsWith(str))) {
       if (down)
-        start = GetSelection().Left() + 1;
+        start = SelectionLeft() + 1;
       else
-        start = GetSelection().Right() - 1;
+        start = SelectionRight() - 1;
       if((start < 0) || (start >= m_text.Length()))
 	return false;
     } else {
       // We are at the start of a match, but the search expression has changed
-      if (GetSelection().Start() > 0) {
+      if (SelectionStart() > 0) {
         if (down)
-          start =GetSelection().Left() + 1;
+          start =SelectionLeft() + 1;
         else
-          start = GetSelection().Right() - 1;
+          start = SelectionRight() - 1;
 	if((start < 0) || (start >= m_text.Length()))
 	  return false;
       } else {
-	start = GetSelection().CursorPosition();
+	start = CursorPosition();
       }
     }
   }
@@ -3599,9 +3597,9 @@ bool EditorCell::FindNext_RegEx(wxString str, const bool &down) {
     }
   if (IsActive()) {
     if (down) {
-      GetSelection().CursorPosition(0);
+      CursorPosition(0);
     } else {
-      GetSelection().CursorPosition(m_text.Length());
+      CursorPosition(m_text.Length());
     }
   }
   return false;
@@ -3613,11 +3611,11 @@ bool EditorCell::ReplaceSelection(const wxString &oldStr,
   wxString text(m_text);
   text.Replace(wxS("\r"), wxS(" "));
 
-  auto start = GetSelection().Left();
-  auto end = GetSelection().Right();
-  if (!GetSelection().IsActive()) {
+  auto start = SelectionLeft();
+  auto end = SelectionRight();
+  if (!SelectionActive()) {
     if (oldStr == wxEmptyString)
-      GetSelection().ClearSelection();
+      ClearSelection();
     else
       return false;
   }
@@ -3637,19 +3635,19 @@ bool EditorCell::ReplaceSelection(const wxString &oldStr,
   StyleText();
 
   m_containsChanges = true;
-  GetSelection().CursorPosition(start + newString.Length());
+  CursorPosition(start + newString.Length());
 
   if (replaceMaximaString) {
     if ((newString.EndsWith("\"") || (text_right.StartsWith("\"")))) {
       if (!((newString.EndsWith("\"") && (text_right.StartsWith("\"")))))
-        GetSelection().CursorMove(-1);
+        CursorMove(-1);
     }
   }
 
   if (keepSelected)
-    GetSelection().Start(start);
+    SelectionStart(start);
   else
-    GetSelection().ClearSelection();
+    ClearSelection();
 
   if (GetType() == MC_TYPE_INPUT)
     FindMatchingParens();
@@ -3664,8 +3662,8 @@ bool EditorCell::ReplaceSelection_RegEx(const wxString &oldStr,
   wxString text(m_text);
   text.Replace(wxS("\r"), wxS(" "));
 
-  auto start = GetSelection().Left();
-  auto end   = GetSelection().Right();
+  auto start = SelectionLeft();
+  auto end   = SelectionRight();
 
   RegexSearch regexSearch(oldStr);
   RegexSearch::Match match;
@@ -3673,7 +3671,7 @@ bool EditorCell::ReplaceSelection_RegEx(const wxString &oldStr,
   if(match.GetStart() == wxNOT_FOUND)
     return false;
   m_text = text;
-  GetSelection().CursorPosition(match.GetEnd());
+  CursorPosition(match.GetEnd());
   
   if (GetType() == MC_TYPE_INPUT)
     FindMatchingParens();
@@ -3683,7 +3681,7 @@ bool EditorCell::ReplaceSelection_RegEx(const wxString &oldStr,
 }
 
 wxString EditorCell::GetSelectionString() const {
-  return m_text.SubString(GetSelection().Left(), GetSelection().Right());
+  return m_text.SubString(SelectionLeft(), SelectionRight());
 }
 
 TextStyle EditorCell::GetSelectionStyle() const {
@@ -3692,39 +3690,31 @@ TextStyle EditorCell::GetSelectionStyle() const {
   if (SelectionActive()) {
     for (const auto &textSnippet: m_styledText) {
       wxString text = textSnippet.GetText();
-      if ((GetSelection().Left() <= pos) &&
-          (pos + text.Length() < GetSelection().Right())) {
+      if ((SelectionLeft() <= pos) &&
+          (pos + text.Length() < SelectionRight())) {
         if (textSnippet.IsStyleSet())
           return textSnippet.GetTextStyle();
       }
-      if (pos > GetSelection().Right())
+      if (pos > SelectionRight())
         return TS_INVALID;
       pos += text.Length();
     }
   } else {
     for (const auto &textSnippet: m_styledText) {
       wxString text = textSnippet.GetText();
-      if ((GetSelection().CursorPosition() >= pos) &&
-	  (GetSelection().CursorPosition() < pos + text.Length()) &&
-	  (GetSelection().CursorPosition() >= 0) &&
+      if ((CursorPosition() >= pos) &&
+	  (CursorPosition() < pos + text.Length()) &&
+	  (CursorPosition() >= 0) &&
 	  (pos + text.Length() >= 0)) {
         if (textSnippet.IsStyleSet())
           return textSnippet.GetTextStyle();
       }
-      if (pos > GetSelection().Right())
+      if (pos > SelectionRight())
         return TS_INVALID;
       pos += text.Length();
     }
   }
   return TS_INVALID;
-}
-
-void EditorCell::ClearSelection() {
-  if (SelectionActive()) {
-    m_selectionChanged = true;
-    m_cellPointers->m_selectionString = wxEmptyString;
-    GetSelection().ClearSelection();
-  }
 }
 
 /***
@@ -3744,7 +3734,7 @@ bool EditorCell::FindNextTemplate(bool left) {
 
   const wxRegEx &varsRegex = left ? leftVarsRegex : rightVarsRegex;
 
-  size_t positionOfCaret = GetSelection().CursorPosition();
+  size_t positionOfCaret = CursorPosition();
 
   // Splits the string into first (from caret in the direction of search)
   // and second (the rest of the string)
@@ -3763,9 +3753,9 @@ bool EditorCell::FindNextTemplate(bool left) {
   if (varsRegex.Matches(first)) {
     varsRegex.GetMatch(&start, &length, 1);
     if (left) {
-      GetSelection().Start(start);
+      SelectionStart(start);
     }
-    GetSelection().SelectionLength(length);
+    SelectionLength(length);
     return true;
   }
 
@@ -3773,9 +3763,9 @@ bool EditorCell::FindNextTemplate(bool left) {
   if (varsRegex.Matches(second)) {
     varsRegex.GetMatch(&start, &length, 1);
     if (!left) {
-      GetSelection().Start(start);
+      SelectionStart(start);
     }
-    GetSelection().SelectionLength(length);
+    SelectionLength(length);
     return true;
   }
 
@@ -3783,19 +3773,19 @@ bool EditorCell::FindNextTemplate(bool left) {
 }
 
 void EditorCell::CaretToEnd() {
-  GetSelection().CursorPosition(m_text.Length());
+  CursorPosition(m_text.Length());
   if (GetType() == MC_TYPE_INPUT)
     FindMatchingParens();
 }
 
 void EditorCell::CaretToStart() {
-  GetSelection().CursorPosition(m_text.Length());
+  CursorPosition(m_text.Length());
   if (GetType() == MC_TYPE_INPUT)
     FindMatchingParens();
 }
 
 void EditorCell::CaretToPosition(size_t pos) {
-  GetSelection().CursorPosition(pos);
+  CursorPosition(pos);
   if (GetType() == MC_TYPE_INPUT)
     FindMatchingParens();
 }
@@ -3856,12 +3846,12 @@ wxAccStatus EditorCell::GetValue(int WXUNUSED(childId),
   wxString retval = ToString();
 
   // If the blinking caret is currently visible we hide the char under the caret
-  if ((m_displayCaret) && (GetSelection().CursorPosition() > 0)) {
-    if ((GetSelection().CursorPosition() < retval.Length())) {
-      if (retval[GetSelection().CursorPosition()] == wxS(' '))
-        retval[GetSelection().CursorPosition()] = wxS('%');
+  if ((m_displayCaret) && (CursorPosition() > 0)) {
+    if ((CursorPosition() < retval.Length())) {
+      if (retval[CursorPosition()] == wxS(' '))
+        retval[CursorPosition()] = wxS('%');
       else
-        retval[GetSelection().CursorPosition()] = wxS(' ');
+        retval[CursorPosition()] = wxS(' ');
     } else
       retval += wxS("%");
   }
