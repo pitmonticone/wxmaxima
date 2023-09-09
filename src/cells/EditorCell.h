@@ -73,21 +73,24 @@ public:
 //  std::unique_ptr<Cell> Copy(GroupCell *group) const override;
   class Selection
   {
+  public:
+    Selection() = delete;
+    Selection(wxString * string){m_string = string;}
     void SetSelection(size_t start, size_t end){m_selectionStart = start; m_selectionEnd = end;}
-    bool IsActive() const {return m_selectionStart =! m_selectionEnd;}
+    bool IsActive() const {return m_selectionStart != m_selectionEnd;}
     void Start(size_t start) {m_selectionStart = start;}
     void End(size_t end) {m_selectionEnd = end;}
     void ClearSelection() {End(Start());}
-    size_t Start() const {return m_selectionStart;}
-    size_t End() const {return m_selectionEnd;}
-    size_t Left() const {return wxMIN(m_selectionStart, m_selectionEnd);}
-    size_t Right() const {return wxMAX(m_selectionStart, m_selectionEnd);}
+    size_t Start() const {return wxMin(m_selectionStart, m_string->Length());}
+    size_t End() const {return wxMin(m_selectionEnd, m_string->Length());}
+    size_t Left() const {return wxMin(Start(), End());}
+    size_t Right() const {return wxMax(Start(), End());}
     size_t SelectionLength() {return(End()-Start());}
-    size_t SelectionLength(size_t length) {End(Start() + length);}
-    size_t CursorMove(long long increment) const {m_selectionEnd += increment;
+    void  SelectionLength(size_t length) {End(Start() + length);}
+    void CursorMove(long long increment) {m_selectionEnd += increment;
       m_selectionStart = m_selectionEnd;}
-    size_t CursorPosition() const {return m_selectionEnd;}
-    size_t CursorPosition(size_t pos) const {m_selectionStart = m_selectionEnd = pos;}
+    size_t CursorPosition() const {return wxMin(m_selectionEnd, m_string->Length());}
+    void CursorPosition(size_t pos) {m_selectionStart = m_selectionEnd = pos;}
   private:
     /*! The start of the current selection.
      */
@@ -95,7 +98,7 @@ public:
     /*! The end of the current selection.
      */
     size_t m_selectionEnd = 0;
-
+    wxString *m_string;
   };
   Selection GetSelection() const {return m_selection;}
   const CellTypeInfo &GetInfo() override;
@@ -264,34 +267,34 @@ public:
 
   //! Get the character position the selection has been started with
   size_t GetSelectionStart() const
-    { return GetSelection()->Start(); }
+    { return GetSelection().Start(); }
 
   //! Get the character position the selection has been ended with
   long GetSelectionEnd() const
-    { return GetSelection()->End(); }
+    { return GetSelection().End(); }
 
   //! Select the whole text contained in this Cell
   void SelectAll() override
     {
-      GetSelection()->SetSelection(0, m_text.Length());
+      GetSelection().SetSelection(0, m_text.Length());
     }
 
   //! Does the selection currently span the whole cell?
   bool AllSelected() const
     {
-      return (GetSelection()->Start() == 0) && (GetSelection()->End == m_text.Length());
+      return (GetSelection().Start() == 0) && (GetSelection().End() == m_text.Length());
     }
 
   //! Unselect everything.
   void SelectNone()
     {
-      GetSelection()->SetSelection(0,0);
+      GetSelection().SetSelection(0,0);
     }
 
   //! Is there any text selected right now?
   bool SelectionActive() const
     {
-      return GetSelection()->IsActive();
+      return GetSelection().IsActive();
     }
 
   bool CanCopy() const override
@@ -409,11 +412,12 @@ public:
 
   bool IsSelectionChanged() const { return m_selectionChanged; }
 
-  void SetSelection(long start, long end);
+  void SetSelection(size_t start, size_t end);
 
-  void GetSelection(long *start, long *end) const
+  void GetSelection(size_t *start, size_t *end) const
     {
-      GetSelection()->GetSelection(start, end);
+      *start = GetSelection().Start();
+      *end   = GetSelection().End();
     }
 
   /*! Replace the current selection with a string
