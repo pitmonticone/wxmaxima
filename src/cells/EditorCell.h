@@ -74,15 +74,20 @@ public:
   class Selection
   {
     void SetSelection(size_t start, size_t end){m_selectionStart = start; m_selectionEnd = end;}
-    bool IsActive() const {return m_selectionActive;}
-    bool Activate() {m_selectionActive = true;}
-    bool Inactivate() {m_selectionActive = false;}
-    void Start(size_t start) {m_selectionStart = start; Activate();}
-    void End(size_t end) {m_selectionEnd = end; Activate();}
+    bool IsActive() const {return m_selectionStart =! m_selectionEnd;}
+    void Start(size_t start) {m_selectionStart = start;}
+    void End(size_t end) {m_selectionEnd = end;}
+    void ClearSelection() {End(Start());}
     size_t Start() const {return m_selectionStart;}
     size_t End() const {return m_selectionEnd;}
     size_t Left() const {return wxMIN(m_selectionStart, m_selectionEnd);}
     size_t Right() const {return wxMAX(m_selectionStart, m_selectionEnd);}
+    size_t SelectionLength() {return(End()-Start());}
+    size_t SelectionLength(size_t length) {End(Start() + length);}
+    size_t CursorMove(long long increment) const {m_selectionEnd += increment;
+      m_selectionStart = m_selectionEnd;}
+    size_t CursorPosition() const {return m_selectionEnd;}
+    size_t CursorPosition(size_t pos) const {m_selectionStart = m_selectionEnd = pos;}
   private:
     /*! The start of the current selection.
      */
@@ -90,10 +95,7 @@ public:
     /*! The end of the current selection.
      */
     size_t m_selectionEnd = 0;
-    size_t m_oldSelectionStart = 0;
-    size_t m_oldSelectionEnd = 0;
-    size_t m_lastSelectionStart = 0;
-    size_t m_selectionActive = false;
+
   };
   Selection GetSelection() const {return m_selection;}
   const CellTypeInfo &GetInfo() override;
@@ -271,7 +273,7 @@ public:
   //! Select the whole text contained in this Cell
   void SelectAll() override
     {
-      GetSelection()->SetSelection(0, m_positionOfCaret = m_text.Length());
+      GetSelection()->SetSelection(0, m_text.Length());
     }
 
   //! Does the selection currently span the whole cell?
@@ -283,18 +285,18 @@ public:
   //! Unselect everything.
   void SelectNone()
     {
-      m_selectionStart = m_selectionEnd = 0;
+      GetSelection()->SetSelection(0,0);
     }
 
   //! Is there any text selected right now?
   bool SelectionActive() const
     {
-      return (m_selectionStart >= 0) && (m_selectionEnd >= 0);
+      return GetSelection()->IsActive();
     }
 
   bool CanCopy() const override
     {
-      return m_selectionStart != -1;
+      return SelectionActive();
     }
 
   bool FindMatchingQuotes();
@@ -335,14 +337,14 @@ public:
 
   //! Is the cursor at the start of this cell?
   bool CaretAtStart() const
-    { return m_positionOfCaret == 0; }
+    { return GetSelection().CursorPosition() == 0; }
 
   //! Move the cursor to the start of this cell
   void CaretToStart();
 
   //! Is the cursor at the end of this cell?
   bool CaretAtEnd() const
-    { return m_positionOfCaret == (long) m_text.Length(); }
+    { return GetSelection().CursorPosition() == m_text.Length(); }
 
   //! Move the cursor to the end of this cell
   void CaretToEnd();
@@ -411,8 +413,7 @@ public:
 
   void GetSelection(long *start, long *end) const
     {
-      *start = m_selectionStart;
-      *end = m_selectionEnd;
+      GetSelection()->GetSelection(start, end);
     }
 
   /*! Replace the current selection with a string
@@ -459,17 +460,13 @@ public:
 
   //! Get the cursor's current position inside the cell.
   size_t GetCaretPosition() const
-    { return m_positionOfCaret; }
+    { return GetSelection().CursorPosition(); }
 
   //! Convert a number to unicode chars.
   void ConvertNumToUNicodeChar();
 
   //! Set the cursor's current position inside the cell.
-  void SetCaretPosition(size_t pos)
-    { m_positionOfCaret = pos;
-      if(m_positionOfCaret > m_text.Length())
-        m_positionOfCaret = m_text.Length();
-    }
+  void SetCaretPosition(size_t pos){GetSelection().CursorPosition(pos);}
 
   bool FindNextTemplate(bool left = false);
 
@@ -477,7 +474,7 @@ public:
 
   wxString TextInFrontOfSelection() const
     {
-      return GetValue().Mid(1, m_selectionStart);
+      return GetValue().Mid(1, GetSelection().Left());
     }
 
   //! Return to the selection after the cell has been left upwards
@@ -503,6 +500,7 @@ public:
   const MaximaTokenizer::TokenList &GetAllTokens();
 
 private:
+  size_t m_lastSelectionStart = 0;
   //! Did the zoom factor change since the last recalculation?
   bool IsZoomFactorChanged() const;
   //! The zoom factor we had the last time we recalculated this cell.
@@ -666,8 +664,6 @@ private:
   wxCoord m_charHeight = 12;
   long m_paren1 = -1, m_paren2 = -1;
 
-  //! Where inside this cell is the cursor?
-  size_t m_positionOfCaret = 0;
   //! Which column the cursor would be if the current line were long enough?
   //! Used when moving up/down between lines
   long  m_caretColumn = -1;
