@@ -2354,7 +2354,6 @@ wxPoint EditorCell::PositionToPoint(int pos) {
 void EditorCell::SelectPointText(const wxPoint point) {
   wxString s;
   SetFont(m_configuration->GetRecalcDC());
-  auto pos = CursorPosition();
   wxPoint posInCell(point);
 
   wxASSERT_MSG(m_currentPoint.x >= 0, _("Bug: x position of cell is unknown!"));
@@ -2367,7 +2366,8 @@ void EditorCell::SelectPointText(const wxPoint point) {
   if (posInCell.y < 0)
     lin = 0;
   size_t lineStart = XYToPosition(0, lin);
-  pos = lineStart;
+
+  auto pos = lineStart;
   // Find the text snippet the line we search for begins with
   size_t currentLine = 1;
   wxCoord indentPixels = 0;
@@ -2380,7 +2380,6 @@ void EditorCell::SelectPointText(const wxPoint point) {
       currentLine++;
     }
   }
-
   if (GetType() == MC_TYPE_INPUT) {
     // Code cell
 
@@ -2428,8 +2427,6 @@ void EditorCell::SelectPointText(const wxPoint point) {
     FindMatchingParens();
     // The line that now follows is pure paranoia.
     pos = wxMin(pos, m_text.Length());
-    if (pos < -1)
-      pos = -1;
   } else {
     // Text cell
 
@@ -2450,13 +2447,11 @@ void EditorCell::SelectPointText(const wxPoint point) {
       pos++;
     }
     pos = wxMin(pos, text.Length());
-    if (pos < -1)
-      pos = -1;
 
     m_displayCaret = true;
     m_caretColumn = -1;
   }
-  SelectionEnd(pos);
+  CursorPosition(pos);
 }
 
 void EditorCell::SelectRectText(const wxPoint one, const wxPoint two) {
