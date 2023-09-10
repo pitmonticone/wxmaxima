@@ -44,8 +44,7 @@
 
 EditorCell::EditorCell(GroupCell *group, Configuration *config,
                        const wxString &text)
-  : Cell(group, config), m_text(text)
-{
+  : Cell(group, config), m_text(text) {
   InitBitFields();
   m_text.Replace(wxS("\u2028"), "\n");
   m_text.Replace(wxS("\u2029"), "\n");
