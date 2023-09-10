@@ -664,10 +664,8 @@ wxString EditorCell::ToHTML() const {
 }
 
 void EditorCell::MarkSelection(wxDC *dc, size_t start, size_t end, TextStyle style) {
-  if ((start < 0) || (end < 0))
-    return;
   wxPoint point, point1;
-  size_t pos1 = start, pos2 = start;
+  size_t pos_right = start, pos_left = start;
 
 #if defined(__WXOSX__)
     dc->SetPen(wxNullPen); // no border on rectangles
@@ -678,20 +676,20 @@ void EditorCell::MarkSelection(wxDC *dc, size_t start, size_t end, TextStyle sty
 #endif
     dc->SetBrush(*(wxTheBrushList->FindOrCreateBrush(
 						     m_configuration->GetColor(style)))); // highlight c.
-  while (pos1 <
+  while (pos_right <
          end) // go through selection, draw a rect for each line of selection
     {
-      while (pos1 < end && m_text.GetChar(pos1) != '\n' &&
-	     m_text.GetChar(pos1) != '\r')
-	pos1++;
+      while (pos_right < end && m_text.GetChar(pos_right) != '\n' &&
+	     m_text.GetChar(pos_right) != '\r')
+	pos_right++;
 
-      point = PositionToPoint(pos2);  // left  point
-      point1 = PositionToPoint(pos1); // right point
+      point = PositionToPoint(pos_left);  // left  point
+      point1 = PositionToPoint(pos_right); // right point
       size_t selectionWidth = point1.x - point.x;
       wxRect rect;
 #if defined(__WXOSX__)
       rect = GetRect(); // rectangle representing the cell
-      if (pos1 !=
+      if (pos_right !=
 	  end) // we have a \n, draw selection to the right border (mac behaviour)
 	selectionWidth = rect.GetRight() - point.x;
 #endif
@@ -701,8 +699,8 @@ void EditorCell::MarkSelection(wxDC *dc, size_t start, size_t end, TextStyle sty
       // draw the rectangle if it is in the region that is to be updated.
       if (m_configuration->InUpdateRegion(rect))
 	dc->DrawRectangle(CropToUpdateRegion(rect));
-      pos1++;
-      pos2 = pos1;
+      pos_right++;
+      pos_left = pos_right;
     }
 }
 
@@ -874,27 +872,17 @@ void EditorCell::Draw(wxPoint point, wxDC *dc, wxDC *antialiassingDC) {
     if (m_displayCaret && m_hasFocus && IsActive()) {
       size_t caretInLine = 0;
       size_t caretInColumn = 0;
-
       PositionToXY(CursorPosition(), &caretInColumn, &caretInLine);
 
       size_t lineWidth = GetLineWidth(caretInLine, caretInColumn);
-
-      dc->SetPen(*(wxThePenList->FindOrCreatePen(
-						 m_configuration->GetColor(TS_CURSOR), 1, wxPENSTYLE_SOLID)));
-      dc->SetBrush(*(wxTheBrushList->FindOrCreateBrush(
-						       m_configuration->GetColor(TS_CURSOR), wxBRUSHSTYLE_SOLID)));
-#if defined(__WXOSX__)
-      // draw 1 pixel shorter caret than on windows
+      dc->SetPen(*(wxThePenList->FindOrCreatePen(m_configuration->GetColor(TS_CURSOR),
+						 1, wxPENSTYLE_SOLID)));
+      dc->SetBrush(*(wxTheBrushList->FindOrCreateBrush(m_configuration->GetColor(TS_CURSOR),
+						       wxBRUSHSTYLE_SOLID)));
       dc->DrawRectangle(
 			point.x + lineWidth - m_configuration->GetCursorWidth(),
 			point.y + Scale_Px(1) - m_center + caretInLine * m_charHeight,
 			m_configuration->GetCursorWidth(), m_charHeight - Scale_Px(5));
-#else
-      dc->DrawRectangle(
-			point.x + +lineWidth - m_configuration->GetCursorWidth() / 2,
-			point.y + Scale_Px(2) - m_center + caretInLine * m_charHeight,
-			m_configuration->GetCursorWidth(), m_charHeight - Scale_Px(3));
-#endif
     }
   }
 }
@@ -1395,8 +1383,8 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
   switch (event.GetKeyCode()) {
   case WXK_LEFT:
     {
-      auto pos = CursorPosition();
       SaveValue();
+      auto pos = CursorPosition();
       if (event.ControlDown()) {
 	size_t lastpos = CursorPosition();
 	while ((pos > 0) &&
@@ -1437,7 +1425,7 @@ bool EditorCell::HandleSpecialKey(wxKeyEvent &event) {
       CursorPosition(pos);
     }
     break;
-
+    
     case WXK_RIGHT:
       {
 	auto pos = CursorPosition();
@@ -2367,7 +2355,6 @@ void EditorCell::SelectPointText(const wxPoint point) {
   wxString s;
   SetFont(m_configuration->GetRecalcDC());
   auto pos = CursorPosition();
-  ClearSelection();
   wxPoint posInCell(point);
 
   wxASSERT_MSG(m_currentPoint.x >= 0, _("Bug: x position of cell is unknown!"));
@@ -2469,7 +2456,7 @@ void EditorCell::SelectPointText(const wxPoint point) {
     m_displayCaret = true;
     m_caretColumn = -1;
   }
-  CursorPosition(pos);
+  SelectionEnd(pos);
 }
 
 void EditorCell::SelectRectText(const wxPoint one, const wxPoint two) {
@@ -2585,7 +2572,6 @@ void EditorCell::UpdateSelectionString() {
   m_cellPointers->m_selectionString.Replace(wxS('\r'), wxS(' '));
   if(m_cellPointers->m_selectionString != selectionString)
     m_selectionChanged = true;
-
 }
 
 void EditorCell::CommentSelection() {
@@ -2770,7 +2756,7 @@ void EditorCell::PasteFromClipboard(const bool primary) {
     wxTheClipboard->UsePrimarySelection(false);
 }
 
-size_t EditorCell::GetLineWidth(size_t line, size_t pos) {
+wxCoord EditorCell::GetLineWidth(size_t line, size_t pos) {
   // Find the text snippet the line we search for begins with for determining
   // the indentation needed.
   size_t currentLine = 1;
@@ -2790,7 +2776,6 @@ size_t EditorCell::GetLineWidth(size_t line, size_t pos) {
   }
 
   size_t i = 0;
-
   std::vector<StyledText>::const_iterator textSnippet;
   for (textSnippet = m_styledText.begin();
        (textSnippet < m_styledText.end()) && (i < line); ++textSnippet) {
@@ -2814,16 +2799,15 @@ size_t EditorCell::GetLineWidth(size_t line, size_t pos) {
     pos -= text.Length();
   }
 
-  if (pos < 0) {
+  if (pos > 0) {
     width -= textWidth;
-    textWidth = GetTextSize(text.SubString(0, text.Length() + pos)).GetWidth();
+    wxString partialSnippet = text.SubString(0, text.Length() + pos);
+    textWidth = GetTextSize(partialSnippet).GetWidth();
     width += textWidth;
   }
 
   // Handle indentation
-  width += indentPixels;
-
-  return width;
+  return width + indentPixels;
 }
 
 void EditorCell::SetState(const HistoryEntry &state) {

@@ -83,9 +83,10 @@ public:
   size_t SelectionLength() {return(SelectionEnd()-SelectionStart());}
   void  SelectionLength(size_t length) {SelectionEnd(SelectionStart() + length);  UpdateSelectionString();}
   void CursorMove(long long increment) {m_selectionEnd += increment;
-    m_selectionStart = m_selectionEnd;UpdateSelectionString();}
+    m_selectionStart = m_selectionEnd; UpdateSelectionString();}
   size_t CursorPosition() const {return wxMin(m_selectionEnd, m_text.Length());}
-  void CursorPosition(size_t pos) {m_selectionStart = m_selectionEnd = pos;UpdateSelectionString();}
+  void CursorPosition(size_t pos) {m_selectionStart = pos;
+    m_selectionEnd = pos; UpdateSelectionString();}
   const CellTypeInfo &GetInfo() override;
   std::unique_ptr<Cell> Copy(GroupCell *group) const override;
 
@@ -286,7 +287,7 @@ public:
 
   void FindMatchingParens();
 
-  size_t GetLineWidth(size_t line, size_t pos);
+  wxCoord GetLineWidth(size_t line, size_t pos);
 
   //! true, if this cell's width has to be recalculated.
   bool IsDirty() const override
