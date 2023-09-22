@@ -185,4 +185,4 @@ jobs:
              cpack -G DragNDrop
       - name: Cleanup
         run: |
-             port -f uninstall inactive
+             port -f uninstall inactive || echo "No cleanup necessary"
