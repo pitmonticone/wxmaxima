@@ -159,14 +159,13 @@ jobs:
         run: |
           aria2c https://github.com/macports/macports-base/releases/download/v2.8.1/MacPorts-2.8.1-12-Monterey.pkg
           sudo installer -pkg MacPorts-2.8.1-12-Monterey.pkg -target /
+          echo "/opt/local/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: |
-          export PATH=$PATH:/usr/local/opt/bin
-          set -e
+          set
           port selfupdate
           port install gettext ninja pandoc maxima gnuplot pkgconfig wxWidgets-3.2
           port select wxWidgets wxWidgets-3.2
-          set +e
       - name: Configure wxMaxima
         run: |
              mkdir ../build-wxm
