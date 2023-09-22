@@ -161,7 +161,12 @@ jobs:
           sudo installer -pkg MacPorts-2.8.1-12-Monterey.pkg -target /
       - name: Install dependencies
         run: |
-          port select gettext ninja pandoc maxima gnuplot pkgconfig wxWidgets-3.2
+          export PATH=$PATH:/usr/local/opt/bin
+          set -e
+          port selfupdate
+          port install gettext ninja pandoc maxima gnuplot pkgconfig wxWidgets-3.2
+          port select wxWidgets wxWidgets-3.2
+          set +e
       - name: Configure wxMaxima
         run: |
              mkdir ../build-wxm
