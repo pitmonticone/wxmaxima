@@ -163,7 +163,6 @@ jobs:
         run: |
           set
           sudo port selfupdate
-        run: |
       - name: Install dependencies
         run: |
           sudo port install gettext ninja pandoc maxima gnuplot pkgconfig wxWidgets-3.2
