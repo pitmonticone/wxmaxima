@@ -234,9 +234,10 @@ void Image::GnuplotSource(wxString gnuplotFilename, wxString dataFilename,
 }
 
 void Image::LoadGnuplotSource_Backgroundtask(
-    std::unique_ptr<ThreadNumberLimiter> limiter,
-    wxString gnuplotFile, wxString dataFile, wxString wxmxFile)
+  std::unique_ptr<ThreadNumberLimiter> limiter,
+  wxString gnuplotFile, wxString dataFile, wxString wxmxFile)
 {
+  SuppressErrorDialogs suppressor;
   if(wxmxFile.IsEmpty())
   {
     {
@@ -278,7 +279,6 @@ void Image::CompressedGnuplotSource(wxString gnuplotFilename, wxString dataFilen
   if(m_gnuplotData.EndsWith(".gz"))
     m_gnuplotData = m_gnuplotData.Left(m_gnuplotData.Length()-3);
 
-  
   m_loadGnuplotSourceTask =
     std::thread(&Image::LoadCompressedGnuplotSource_Backgroundtask,
                 this,
@@ -371,6 +371,7 @@ void Image::LoadCompressedGnuplotSource_Backgroundtask(
   wxString sourcefile,
   wxString datafile
   ) {
+  wxLogNull test;
   // Error dialogues need to be created by the foreground thread.
   SuppressErrorDialogs suppressor;
 
@@ -821,7 +822,7 @@ void Image::LoadImage(wxString image, wxString wxmxFile,
 }
 
 void Image::LoadImage_Backgroundtask(std::unique_ptr<ThreadNumberLimiter> limiter) {
-
+  SuppressErrorDialogs suppressor;
   wxImage Image;
   wxLogBuffer errorAggregator;
   if (m_compressedImage.GetDataLen() > 0) {
