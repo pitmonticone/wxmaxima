@@ -271,14 +271,8 @@ void Image::CompressedGnuplotSource(wxString gnuplotFilename, wxString dataFilen
   std::unique_ptr<ThreadNumberLimiter> limiter(new
                                                ThreadNumberLimiter(&m_gnuplotDataThreadRunning)); 
 
-    // Store the filenames without the ".gz".
   m_gnuplotSource = std::move(gnuplotFilename);
   m_gnuplotData = std::move(dataFilename);
-  if(m_gnuplotSource.EndsWith(".gz"))
-    m_gnuplotSource = m_gnuplotSource.Left(m_gnuplotSource.Length()-3);
-  if(m_gnuplotData.EndsWith(".gz"))
-    m_gnuplotData = m_gnuplotData.Left(m_gnuplotData.Length()-3);
-
   m_loadGnuplotSourceTask =
     std::thread(&Image::LoadCompressedGnuplotSource_Backgroundtask,
                 this,
@@ -286,6 +280,11 @@ void Image::CompressedGnuplotSource(wxString gnuplotFilename, wxString dataFilen
                 m_gnuplotSource,
                 m_gnuplotData,
                 wxmxFile);
+  // Store the filenames without the ".gz".
+  if(m_gnuplotSource.EndsWith(".gz"))
+    m_gnuplotSource = m_gnuplotSource.Left(m_gnuplotSource.Length()-3);
+  if(m_gnuplotData.EndsWith(".gz"))
+    m_gnuplotData = m_gnuplotData.Left(m_gnuplotData.Length()-3);
 }
 
 
@@ -367,40 +366,45 @@ void Image::LoadGnuplotData(
 
 void Image::LoadCompressedGnuplotSource_Backgroundtask(
   std::unique_ptr<ThreadNumberLimiter> limiter,
-  wxString wxmxFile,
   wxString sourcefile,
-  wxString datafile
+  wxString datafile,
+  wxString wxmxFile
   ) {
-  wxLogNull test;
-  // Error dialogues need to be created by the foreground thread.
-  SuppressErrorDialogs suppressor;
-
-  // Read the gnuplot source
   {
-    wxFileInputStream wxmx(wxmxFile);
-    WxmxStream source(wxmx, sourcefile);
-    if (!source.Eof()) {
-      m_gnuplotSource_Compressed.Clear();
-      wxMemoryOutputStream mstream;
-      source.Read(mstream);
-      m_gnuplotSource_Compressed.AppendData(
-        mstream.GetOutputStreamBuffer()->GetBufferStart(),
-        mstream.GetOutputStreamBuffer()->GetBufferSize());
+    // Error dialogues need to be created by the foreground thread.
+    SuppressErrorDialogs suppressor;
+    
+    // Read the gnuplot source
+    {
+      wxFileInputStream wxmx(wxmxFile);
+      WxmxStream source(wxmx, sourcefile);
+      if (!source.Eof()) {
+        m_gnuplotSource_Compressed.Clear();
+        wxMemoryOutputStream mstream;
+        source.Read(mstream);
+        m_gnuplotSource_Compressed.AppendData(
+          mstream.GetOutputStreamBuffer()->GetBufferStart(),
+          mstream.GetOutputStreamBuffer()->GetBufferSize());
+      }
     }
-  }
-  // Read the gnuplot data
-  {
-    m_gnuplotData_Compressed.Clear();
-    wxFileInputStream wxmx(wxmxFile);
-    WxmxStream data(wxmx, datafile);
-    if (!data.Eof()) { // open successful
+    // Read the gnuplot data
+    {
+      m_gnuplotData_Compressed.Clear();
+      wxFileInputStream wxmx(wxmxFile);
+      WxmxStream data(wxmx, datafile);
+      if (!data.Eof()) { // open successful
       wxMemoryOutputStream mstream;
       data.Read(mstream);
       m_gnuplotData_Compressed.AppendData(
         mstream.GetOutputStreamBuffer()->GetBufferStart(),
         mstream.GetOutputStreamBuffer()->GetBufferSize());
+      }
     }
   }
+  wxLogMessage(_("Downloaded %s (%li bytes) and %s (%li bytes) from %s"),
+               sourcefile.mb_str(), (long)m_gnuplotSource_Compressed.GetDataLen(),
+               datafile.mb_str(), (long)m_gnuplotData_Compressed.GetDataLen(),
+               wxmxFile.mb_str());
 }
 
 Image::WxmxStream::WxmxStream(wxInputStream &wxmxFile, wxString fileInWxmx):
