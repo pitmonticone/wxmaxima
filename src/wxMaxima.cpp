@@ -4114,7 +4114,7 @@ bool wxMaxima::OpenWXMXFile(const wxString &file, Worksheet *document,
   while(!wxmxContents.Eof())
     {
       contentsEntry = wxmxContents.GetNextEntry();
-      if(contentsEntry && (contentsEntry->GetName() == wxS("content.xml")))
+      if((!contentsEntry) || (contentsEntry->GetName() == wxS("content.xml")))
 	break;
     }
 

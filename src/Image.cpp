@@ -409,7 +409,7 @@ Image::WxmxStream::WxmxStream(wxInputStream &wxmxFile, wxString fileInWxmx):
   {
     wxZipEntry *contentsEntry = NULL;
     contentsEntry = GetNextEntry();
-    if(contentsEntry && (contentsEntry->GetName() == fileInWxmx))
+    if((!contentsEntry) || (contentsEntry->GetName() == fileInWxmx))
       break;
   }
 }
