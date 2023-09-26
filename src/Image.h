@@ -257,9 +257,9 @@ private:
                    
                      
   void LoadCompressedGnuplotSource_Backgroundtask(std::unique_ptr<ThreadNumberLimiter> limiter,
-                                                  wxString wxmxFile,
                                                   wxString sourcefile,
-                                                  wxString datafile
+                                                  wxString datafile,
+                                                  wxString wxmxFile
     );
   //! Loads an image from a file
   void LoadImage(wxString image, wxString wxmxFile, bool remove = true);
