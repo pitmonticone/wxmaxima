@@ -134,7 +134,7 @@ public:
   wxString ToTeX() const override;
   wxString ToXML() const override;
 
-  bool CanPopOut() const override { return !m_image->GnuplotSource().empty(); }
+  bool CanPopOut() const override { return m_image && m_image->HasGnuplotSource(); }
 
 private:
   void SetConfiguration(Configuration *config) override;

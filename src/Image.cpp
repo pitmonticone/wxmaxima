@@ -283,8 +283,8 @@ void Image::CompressedGnuplotSource(wxString gnuplotFilename, wxString dataFilen
     std::thread(&Image::LoadCompressedGnuplotSource_Backgroundtask,
                 this,
                 std::move(limiter),
-                gnuplotFilename,
-                dataFilename,
+                m_gnuplotSource,
+                m_gnuplotData,
                 wxmxFile);
 }
 

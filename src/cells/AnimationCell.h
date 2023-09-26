@@ -161,7 +161,7 @@ public:
   bool AnimationRunning() const { return m_animationRunning; }
   void AnimationRunning(bool run);
   bool CanPopOut() const override
-    { return (!m_images[m_displayed]->GnuplotSource().empty()); }
+    { return m_images[m_displayed] && (m_images[m_displayed]->HasGnuplotSource()); }
 
   void GnuplotSource(int image, wxString gnuplotFilename, wxString dataFilename,
                      const wxString &wxmxFile)

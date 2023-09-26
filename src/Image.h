@@ -223,6 +223,7 @@ public:
     WxmxStream(wxInputStream &wxmxfile, wxString fileInWxmx);
   };
 
+  bool HasGnuplotSource(){return m_gnuplotSource_Compressed.GetDataLen() > 20;}
 private:
   bool m_fromWxFS = false;
   bool m_gnuplotDataThreadRunning = false;
