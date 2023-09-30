@@ -3552,14 +3552,17 @@ void wxMaxima::VariableActionHtmlHelp(const wxString &value) {
   if (value == wxS("text")) {
     if (!m_HelpMenu->IsChecked(EventIDs::menu_maxima_uses_internal_help))
       m_HelpMenu->Check(EventIDs::menu_maxima_uses_internal_help, true);
+    m_configuration.MaximaHelpFormat(Configuration::maxima);
   }
   if (value == wxS("html")) {
     if (!m_HelpMenu->IsChecked(EventIDs::menu_maxima_uses_html_help))
       m_HelpMenu->Check(EventIDs::menu_maxima_uses_html_help, true);
+    m_configuration.MaximaHelpFormat(Configuration::browser);
   }
   if ((value == wxS("wxmaxima")) || (value == wxS("frontend"))) {
     if (!m_HelpMenu->IsChecked(EventIDs::menu_maxima_uses_wxmaxima_help))
       m_HelpMenu->Check(EventIDs::menu_maxima_uses_wxmaxima_help, true);
+    m_configuration.MaximaHelpFormat(Configuration::frontend);
   }
 }
 
@@ -4476,6 +4479,23 @@ void wxMaxima::SetupVariables() {
   cmd.Replace(wxS("\\"), wxS("/"));
   SendMaxima(cmd);
 
+  switch(m_configuration.MaximaHelpFormat())
+    {
+    case Configuration::frontend:
+      SendMaxima(":lisp-quiet (msetq output_format_for_help '$frontend)");
+      break;
+      
+    case Configuration::maxima:
+      SendMaxima(":lisp-quiet (msetq output_format_for_help '$text)");
+      break;
+      
+    case Configuration::browser:
+      SendMaxima(":lisp-quiet (msetq output_format_for_help '$html)");
+      break;
+      
+    default:
+      SendMaxima(":lisp-quiet (msetq output_format_for_help '$frontend)");
+    }
   wxString wxmaximaversion_lisp(wxS(GITVERSION));
 
 #ifdef __WXMSW__
