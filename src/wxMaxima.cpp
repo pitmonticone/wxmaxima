@@ -839,6 +839,10 @@ wxMaxima::wxMaxima(wxWindow *parent, int id,
           NULL, this);
   Connect(EventIDs::menu_apropos, wxEVT_MENU, wxCommandEventHandler(wxMaxima::HelpMenu),
           NULL, this);
+  Connect(EventIDs::menu_wxmaxima_uses_help_sidebar, wxEVT_MENU,
+          wxCommandEventHandler(wxMaxima::HelpMenu), NULL, this);
+  Connect(EventIDs::menu_wxmaxima_uses_help_browser, wxEVT_MENU,
+          wxCommandEventHandler(wxMaxima::HelpMenu), NULL, this);
   Connect(EventIDs::menu_maxima_uses_html_help, wxEVT_MENU,
           wxCommandEventHandler(wxMaxima::HelpMenu), NULL, this);
   Connect(EventIDs::menu_maxima_uses_internal_help, wxEVT_MENU,
@@ -9281,7 +9285,12 @@ void wxMaxima::HelpMenu(wxCommandEvent &event) {
     CommandWiz(_("Apropos"), wxEmptyString, wxEmptyString, wxS("apropos(#1);"),
                _("Show all commands similar to:"), wxS("%"), wxEmptyString);
   }
-
+  else if(event.GetId() == EventIDs::menu_wxmaxima_uses_help_browser){
+    m_configuration.InternalHelpBrowser(false);
+  }
+  else if(event.GetId() == EventIDs::menu_wxmaxima_uses_help_sidebar){
+    m_configuration.InternalHelpBrowser(true);
+  }
   else if(event.GetId() == EventIDs::menu_maxima_uses_internal_help){
     m_configuration.MaximaUsesHtmlBrowser(false);
     m_configuration.MaximaUsesWxmaximaBrowser(false);
