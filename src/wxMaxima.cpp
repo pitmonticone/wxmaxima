@@ -4482,19 +4482,19 @@ void wxMaxima::SetupVariables() {
   switch(m_configuration.MaximaHelpFormat())
     {
     case Configuration::frontend:
-      SendMaxima(":lisp-quiet (msetq output_format_for_help '$frontend)");
+      SendMaxima(":lisp-quiet (msetq $output_format_for_help '$frontend)");
       break;
       
     case Configuration::maxima:
-      SendMaxima(":lisp-quiet (msetq output_format_for_help '$text)");
+      SendMaxima(":lisp-quiet (msetq $output_format_for_help '$text)");
       break;
       
     case Configuration::browser:
-      SendMaxima(":lisp-quiet (msetq output_format_for_help '$html)");
+      SendMaxima(":lisp-quiet (msetq $output_format_for_help '$html)");
       break;
       
     default:
-      SendMaxima(":lisp-quiet (msetq output_format_for_help '$frontend)");
+      SendMaxima(":lisp-quiet (msetq $output_format_for_help '$frontend)");
     }
   wxString wxmaximaversion_lisp(wxS(GITVERSION));
 
