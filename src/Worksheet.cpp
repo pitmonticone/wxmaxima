@@ -233,7 +233,7 @@ Worksheet::Worksheet(wxWindow *parent, int id,
   Connect(wxEVT_SCROLL_THUMBRELEASE,
           wxScrollWinEventHandler(Worksheet::OnScrollEvent));
   Connect(wxEVT_SCROLL_THUMBTRACK,
-          wxScrollWinEventHandler(Worksheet::OnThumbtrack));
+          wxScrollWinEventHandler(Worksheet::OnScrollEvent));
 }
 
 void Worksheet::OnSidebarKey(wxCommandEvent &event) {
@@ -2365,11 +2365,27 @@ void Worksheet::OnMouseWheel(wxMouseEvent &event) {
     GetParent()->GetEventHandler()->QueueEvent(zoomEvent);
     return;
   }
+  if(CanAnimate())
+    {
+      auto *animation = m_cellPointers.m_selectionStart.CastAs<AnimationCell *>();
+      animation->AnimationRunning(false);
+      auto displayedIndex = animation->GetDisplayedIndex();
+      if (event.GetWheelRotation() > 0)
+	{
+	  if(displayedIndex < animation->Length() - 1)
+	    animation->SetDisplayedIndex(displayedIndex + 1);
+	}
+      else
+	{
+	  if(displayedIndex > 0)
+	    animation->SetDisplayedIndex(displayedIndex - 1);
+	}
+      wxRect rect = animation->GetRect();
+      RequestRedraw(rect);
 
-  if (!CanAnimate()) {
+    }
+  else
     event.Skip();
-    return;
-  }
 }
 
 void Worksheet::OnMouseMotion(wxMouseEvent &event) {
@@ -7413,43 +7429,6 @@ void Worksheet::OnScrollEvent(wxScrollWinEvent &ev) {
   // If we don't Skip() that event we effectively veto it.
   if (!CanAnimate())
     ev.Skip();
-}
-
-void Worksheet::OnThumbtrack(wxScrollWinEvent &ev) {
-  // We don't want to start the autosave while the user is scrolling through
-  // the document since this will shortly halt the scroll
-  m_keyboardInactiveTimer.StartOnce(10000);
-  if (CanAnimate()) {
-    //! Step the slide show.
-    auto *tmp = m_cellPointers.m_selectionStart.CastAs<AnimationCell *>();
-    tmp->AnimationRunning(false);
-
-    auto displayedIndex = tmp->GetDisplayedIndex();
-    if (ev.GetEventType() == wxEVT_SCROLLWIN_LINEUP)
-      {
-	if(displayedIndex < tmp->Length() - 1)
-	  tmp->SetDisplayedIndex(displayedIndex + 1);
-      }
-    else if (ev.GetEventType() == wxEVT_SCROLLWIN_LINEDOWN)
-      {
-	if(displayedIndex > 0)
-	  tmp->SetDisplayedIndex(displayedIndex - 1);
-      }
-
-    wxRect rect = m_cellPointers.m_selectionStart->GetRect();
-    RequestRedraw(rect);
-    //    ev.Veto();
-  } else {
-    ScrolledAwayFromEvaluation();
-
-    if (ev.GetOrientation() == wxHORIZONTAL)
-      m_newxPosition = ev.GetPosition();
-    else
-      m_newyPosition = ev.GetPosition();
-
-    RequestRedraw();
-    ev.Skip();
-  }
 }
 
 wxString Worksheet::GetInputAboveCaret() {
