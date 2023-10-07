@@ -1432,6 +1432,7 @@ public:
     See also OnMouseWheel and OnScrollChanged
   */
   void OnThumbtrack(wxScrollWinEvent &ev);
+  void OnScrollEvent(wxScrollWinEvent &ev);
   /*! Called if the mouse wheel sents events
 
     The virtual mouse wheel touchpads provide are handled by OnThumbtrack instead.

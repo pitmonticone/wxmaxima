@@ -222,7 +222,17 @@ Worksheet::Worksheet(wxWindow *parent, int id,
   Connect(wxEVT_SET_FOCUS, wxFocusEventHandler(Worksheet::OnSetFocus));
   Connect(wxEVT_SCROLL_CHANGED,
           wxScrollEventHandler(Worksheet::OnScrollChanged));
-  Connect(wxEVT_SCROLLWIN_THUMBTRACK,
+  Connect(wxEVT_SCROLL_LINEUP,
+          wxScrollWinEventHandler(Worksheet::OnScrollEvent));
+  Connect(wxEVT_SCROLL_LINEDOWN,
+          wxScrollWinEventHandler(Worksheet::OnScrollEvent));
+  Connect(wxEVT_SCROLL_PAGEUP,
+          wxScrollWinEventHandler(Worksheet::OnScrollEvent));
+  Connect(wxEVT_SCROLL_PAGEDOWN,
+          wxScrollWinEventHandler(Worksheet::OnScrollEvent));
+  Connect(wxEVT_SCROLL_THUMBRELEASE,
+          wxScrollWinEventHandler(Worksheet::OnScrollEvent));
+  Connect(wxEVT_SCROLL_THUMBTRACK,
           wxScrollWinEventHandler(Worksheet::OnThumbtrack));
 }
 
@@ -2360,40 +2370,6 @@ void Worksheet::OnMouseWheel(wxMouseEvent &event) {
     event.Skip();
     return;
   }
-
-  //! Step the slide show.
-  int rot = event.GetWheelRotation();
-
-  AnimationCell *cell =
-    m_cellPointers.m_selectionStart.CastAs<AnimationCell *>();
-  cell->AnimationRunning(false);
-
-  if (rot > 0)
-    cell->SetDisplayedIndex((cell->GetDisplayedIndex() + 1) % cell->Length());
-  else
-    cell->SetDisplayedIndex((cell->GetDisplayedIndex() - 1) % cell->Length());
-
-  wxRect rect = m_cellPointers.m_selectionStart->GetRect();
-  RequestRedraw(rect);
-
-  if (m_mainToolBar && m_mainToolBar->m_plotSlider) {
-#ifdef __WXMSW__
-    // On Windows: Set the focus to the slider so it handles further wheel
-    // events
-    m_mainToolBar->m_plotSlider->SetFocus();
-#endif
-
-    m_mainToolBar->m_plotSlider->SetValue(cell->GetDisplayedIndex());
-  }
-
-#ifdef __WXMSW__
-  // On Windows the first scroll event scrolls the canvas. Let's scroll it back
-  // again.
-  int view_x, view_y;
-  GetViewStart(&view_x, &view_y);
-  view_y += (rot > 0) ? +1 : -1;
-  Scroll(view_x, view_y);
-#endif
 }
 
 void Worksheet::OnMouseMotion(wxMouseEvent &event) {
@@ -7432,6 +7408,13 @@ void Worksheet::OnScrollChanged(wxScrollEvent &ev) {
   ev.Skip();
 }
 
+void Worksheet::OnScrollEvent(wxScrollWinEvent &ev) {
+  m_keyboardInactiveTimer.StartOnce(10000);
+  // If we don't Skip() that event we effectively veto it.
+  if (!CanAnimate())
+    ev.Skip();
+}
+
 void Worksheet::OnThumbtrack(wxScrollWinEvent &ev) {
   // We don't want to start the autosave while the user is scrolling through
   // the document since this will shortly halt the scroll
@@ -7441,10 +7424,17 @@ void Worksheet::OnThumbtrack(wxScrollWinEvent &ev) {
     auto *tmp = m_cellPointers.m_selectionStart.CastAs<AnimationCell *>();
     tmp->AnimationRunning(false);
 
+    auto displayedIndex = tmp->GetDisplayedIndex();
     if (ev.GetEventType() == wxEVT_SCROLLWIN_LINEUP)
-      tmp->SetDisplayedIndex((tmp->GetDisplayedIndex() + 1) % tmp->Length());
-    else
-      tmp->SetDisplayedIndex((tmp->GetDisplayedIndex() - 1) % tmp->Length());
+      {
+	if(displayedIndex < tmp->Length() - 1)
+	  tmp->SetDisplayedIndex(displayedIndex + 1);
+      }
+    else if (ev.GetEventType() == wxEVT_SCROLLWIN_LINEDOWN)
+      {
+	if(displayedIndex > 0)
+	  tmp->SetDisplayedIndex(displayedIndex - 1);
+      }
 
     wxRect rect = m_cellPointers.m_selectionStart->GetRect();
     RequestRedraw(rect);
