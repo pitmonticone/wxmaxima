@@ -87,6 +87,11 @@ wxSize OutCommon::GetInvScaledSize() const {
 
 bool OutCommon::PrepareLayout(Cell *tree) {
   wxASSERT(m_recalculationDc);
+  if(m_recalculationDc == NULL)
+    return false;
+  wxASSERT(m_recalculationDc->IsOk());
+  if (!m_recalculationDc->IsOk())
+    return false;
   if (!tree)
     return false;
 
@@ -104,12 +109,7 @@ bool OutCommon::PrepareLayout(Cell *tree) {
     for (GroupCell &tmp : OnList(dynamic_cast<GroupCell *>(tree)))
       tmp.Recalculate();
   }
-
-  if(m_recalculationDc == NULL)
-    return false;
-  if (!m_recalculationDc->IsOk())
-    return false;
-
+  
   GetMaxPoint(tree, &m_size.x, &m_size.y);
   return true;
 }
@@ -175,11 +175,11 @@ void OutCommon::GetMaxPoint(Cell *tree, int *width, int *height) const {
 }
 
 void OutCommon::Draw(Cell *tree) {
-  wxPoint point;
-  point.x = 0;
-  point.y = tree->GetCenterList();
+  if(!tree)
+    return;
+  wxPoint point = tree->GetCurrentPoint();
+//  m_recalculationDc->SetLogicalOrigin(point.x, point.y);
   int drop = tree->GetMaxDrop();
-
   for (Cell &tmp : OnDrawList(tree)) {
     const Cell *const next = tmp.GetNext();
     if (!tmp.IsBrokenIntoLines()) {
@@ -211,6 +211,7 @@ void OutCommon::Draw(Cell *tree) {
   m_ppi = m_thisconfig.GetRecalcDC()->GetPPI();
   m_ppi.x *= m_scale;
   m_ppi.y *= m_scale;
+  m_recalculationDc->SetLogicalOrigin(0,0);
 }
 
 void OutCommon::BreakUpCells(Cell *tree) const {

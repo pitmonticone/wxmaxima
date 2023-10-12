@@ -441,6 +441,7 @@ bool GroupCell::Recalculate() {
   bool retval = NeedsRecalculation(EditorFontSize());
   
   if (retval == true) {
+    UpdateYPosition();
     // Recalculating pagebreaks is simple
     if (m_groupType == GC_TYPE_PAGEBREAK) {
       retval = NeedsRecalculation(EditorFontSize());
@@ -462,9 +463,6 @@ bool GroupCell::Recalculate() {
     m_cellsAppended = false;
     m_clientWidth_old = m_configuration->GetCanvasSize().x;
   }
-  // Move all cells that follow the current one down by the amount this cell
-  // has grown.
-  UpdateYPosition();
   wxASSERT(!NeedsRecalculation(m_configuration->GetDefaultFontSize()));
   return retval;
 }
