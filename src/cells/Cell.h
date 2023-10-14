@@ -302,6 +302,9 @@ public:
   */
   void DrawList(wxPoint point, wxDC *dc, wxDC *adc);
   void DrawList(wxDC *dc, wxDC *adc){DrawList(m_currentPoint, dc, adc);}
+  void DrawList_handlingLinebreaks(wxPoint point, wxDC *dc, wxDC *adc, bool suppressDraw = false);
+
+  wxCoord GetLineIndent () const;
 
   /*! Draw a rectangle that marks this cell or this list of cells as selected
 

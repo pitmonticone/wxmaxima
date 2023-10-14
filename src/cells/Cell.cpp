@@ -367,6 +367,35 @@ void Cell::DrawList(wxPoint point, wxDC *dc, wxDC *adc) {
   }
 }
 
+wxCoord Cell::GetLineIndent() const {
+  if ((GetTextStyle() != TS_LABEL) &&
+      (GetTextStyle() != TS_USERLABEL) &&
+      (GetTextStyle() != TS_MAIN_PROMPT) &&
+      (GetTextStyle() != TS_OTHER_PROMPT) &&
+      (GetTextStyle() != TS_ASCIIMATHS) && m_configuration->IndentMaths())
+    return Scale_Px(m_configuration->GetLabelWidth()) + 2 * MC_TEXT_PADDING;
+  return 0;
+}
+
+void Cell::DrawList_handlingLinebreaks(wxPoint point, wxDC *dc, wxDC *adc, bool suppressDraw) {
+  int drop = 0;
+  for (Cell &tmp : OnDrawList(this)) {
+    if (tmp.BreakLineHere()) {
+      if (tmp.HasBigSkip())
+	point.y += MC_LINE_SKIP;
+      
+      point.x = m_configuration->GetIndent() + tmp.GetLineIndent();
+      point.y += drop + tmp.GetCenterList();
+      drop = tmp.GetMaxDrop();
+    }
+    if(suppressDraw)
+        tmp.SetCurrentPoint(point);
+    else
+        tmp.Draw(point, dc, adc);
+    point.x += tmp.GetWidth();
+  }
+}
+
 void Cell::RecalculateList(AFontSize fontsize) {
   for (Cell &tmp : OnList(this))
     tmp.Recalculate(fontsize);
@@ -386,7 +415,7 @@ void Cell::Recalculate(AFontSize fontsize) {
 
 bool Cell::DrawThisCell(wxPoint point) {
   SetCurrentPoint(point);
-
+  
   // If the cell isn't on the worksheet we don't draw it.
   if (!HasValidPosition())
     return false;

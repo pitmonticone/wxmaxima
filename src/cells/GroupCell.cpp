@@ -652,32 +652,6 @@ int GroupCell::GetInputIndent() {
   return labelWidth;
 }
 
-void GroupCell::UpdateOutputPositions() {
-  UpdateYPosition();
-  if (m_output && !IsHidden()) {
-    wxPoint in = GetCurrentPoint();
-    if (m_configuration->ShowCodeCells() || (m_groupType != GC_TYPE_CODE))
-      in.y += m_inputLabel->GetMaxDrop();
-
-    m_outputRect.SetPosition(in);
-    bool isFirst = true;
-    int drop = 0;
-    for (Cell &tmp : OnDrawList(m_output.get())) {
-      if (isFirst || tmp.BreakLineHere()) {
-        if (!isFirst && tmp.HasBigSkip())
-          in.y += MC_LINE_SKIP;
-
-        in.x = GetCurrentPoint().x + GetLineIndent(&tmp);
-        in.y += drop + tmp.GetCenterList();
-        drop = tmp.GetMaxDrop();
-      }
-      tmp.SetCurrentPoint(in);
-      in.x += tmp.GetWidth();
-      isFirst = false;
-    }
-  }
-}
-
 void GroupCell::Draw(wxPoint const point, wxDC *dc, wxDC *antialiassingDC) {
   Cell::Draw(point, dc, antialiassingDC);
   if (NeedsRecalculation(m_configuration->GetDefaultFontSize()))
@@ -711,8 +685,6 @@ void GroupCell::Draw(wxPoint const point, wxDC *dc, wxDC *antialiassingDC) {
     //
     // Draw input and output
     //
-    SetPen(antialiassingDC);
-
     if (m_output && !IsHidden()) {
       wxPoint in = point;
       if (m_configuration->ShowCodeCells() || (m_groupType != GC_TYPE_CODE))
@@ -723,21 +695,8 @@ void GroupCell::Draw(wxPoint const point, wxDC *dc, wxDC *antialiassingDC) {
       if((!m_configuration->ClipToDrawRegion()) ||
 	 (m_configuration->GetUpdateRegion().Intersects(m_outputRect)))
 	{
-	  bool isFirst = true;
-	  int drop = 0;
-	  for (Cell &tmp : OnDrawList(m_output.get())) {
-	    if (isFirst || tmp.BreakLineHere()) {
-	      if (!isFirst && tmp.HasBigSkip())
-		in.y += MC_LINE_SKIP;
-	      
-	      in.x = point.x + GetLineIndent(&tmp);
-	      in.y += drop + tmp.GetCenterList();
-	      drop = tmp.GetMaxDrop();
-	    }
-	    tmp.Draw(in, dc, antialiassingDC);
-	    in.x += tmp.GetWidth();
-	    isFirst = false;
-	  }
+	  SetPen(antialiassingDC);
+	  m_output.get()->DrawList_handlingLinebreaks(in, dc, antialiassingDC);
 	}
     }
     if ((m_configuration->ShowCodeCells()) || (m_groupType != GC_TYPE_CODE)) {
@@ -757,6 +716,11 @@ void GroupCell::Draw(wxPoint const point, wxDC *dc, wxDC *antialiassingDC) {
   m_configuration->Outdated(false);
 }
 
+void GroupCell::UpdateOutputPositions()
+{
+  if(GetOutput()){GetOutput()->DrawList_handlingLinebreaks(m_currentPoint, NULL, NULL, true);}
+}
+
 bool GroupCell::AddEnding() {
   return GetEditable() && GetEditable()->AddEnding();
 }
@@ -766,15 +730,6 @@ wxRect GroupCell::GetRect(bool WXUNUSED(all)) const {
                 m_height);
 }
 
-int GroupCell::GetLineIndent(const Cell *cell) const {
-  if (cell && (cell->GetTextStyle() != TS_LABEL) &&
-      (cell->GetTextStyle() != TS_USERLABEL) &&
-      (cell->GetTextStyle() != TS_MAIN_PROMPT) &&
-      (cell->GetTextStyle() != TS_OTHER_PROMPT) &&
-      (cell->GetTextStyle() != TS_ASCIIMATHS) && m_configuration->IndentMaths())
-    return Scale_Px(m_configuration->GetLabelWidth()) + 2 * MC_TEXT_PADDING;
-  return 0;
-}
 
 void GroupCell::UpdateCellsInGroup() {
   if (m_output != NULL)
@@ -1474,7 +1429,7 @@ void GroupCell::BreakLines() {
 
   // 3rd step: Determine a sane maximum line width
   int fullWidth = m_configuration->GetCanvasSize().x;
-  int currentWidth = GetLineIndent(cell);
+  int currentWidth = cell->GetLineIndent();
   if ((cell->GetTextStyle() != TS_LABEL) && (cell->GetTextStyle() != TS_USERLABEL))
     fullWidth -= m_configuration->GetIndent();
 
@@ -1490,7 +1445,7 @@ void GroupCell::BreakLines() {
     bool prevBroken = false;
     for (Cell &tmp : OnDrawList(cell)) {
       if (prevBroken) {
-        currentWidth += GetLineIndent(&tmp);
+        currentWidth += tmp.GetLineIndent();
         prevBroken = false;
       }
       int const cellWidth = tmp.GetWidth();

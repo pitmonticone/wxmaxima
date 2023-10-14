@@ -44,7 +44,8 @@ OutCommon::OutCommon(Configuration **configuration, const wxString &filename,
     m_configuration(configuration), m_scale(scale), m_fullWidth(fullWidth) {
   m_thisconfig.ShowCodeCells(m_oldconfig->ShowCodeCells());
   m_thisconfig.SetWorkSheet((*configuration)->GetWorkSheet());
-
+  m_thisconfig.ClipToDrawRegion(false);
+  m_thisconfig.SetPrinting(true);
   *m_configuration = &m_thisconfig;
   m_thisconfig.SetZoomFactor_temporarily(1);
   m_thisconfig.FontChanged();

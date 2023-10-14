@@ -394,7 +394,6 @@ public:
 protected:
   bool NeedsRecalculation(AFontSize fontSize) const override;
   int GetInputIndent();
-  int GetLineIndent (const Cell *cell) const ;
   void UpdateCellsInGroup();
 
 //** 16-byte objects (16 bytes)
