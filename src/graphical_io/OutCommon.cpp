@@ -182,30 +182,7 @@ void OutCommon::Draw(Cell *tree) {
 //  m_recalculationDc->SetLogicalOrigin(point.x, point.y);
   int drop = tree->GetMaxDrop();
   for (Cell &tmp : OnDrawList(tree)) {
-    const Cell *const next = tmp.GetNext();
-    if (!tmp.IsBrokenIntoLines()) {
-      tmp.Draw(point, m_recalculationDc, m_recalculationDc);
-      if (next && next->BreakLineHere()) {
-        point.x = 0;
-        point.y += drop + next->GetCenterList();
-        if (tmp.HasBigSkip())
-          // Note: This skip was observerd in EMFout and SVGout, but not
-          // BitmapOut.
-          point.y += MC_LINE_SKIP;
-        drop = next->GetMaxDrop();
-      } else
-        point.x += tmp.GetWidth();
-    } else {
-      if (next && next->BreakLineHere()) {
-        point.x = 0;
-        point.y += drop + next->GetCenterList();
-        if (tmp.HasBigSkip())
-          // Note: This skip was observerd in EMFout and SVGout, but not
-          // BitmapOut.
-          point.y += MC_LINE_SKIP;
-        drop = next->GetMaxDrop();
-      }
-    }
+    tmp.DrawList_handlingLinebreaks(tmp.GetCurrentPoint(), m_thisconfig.GetRecalcDC(), m_thisconfig.GetRecalcDC());
   }
 
   // Update the bitmap's size information.
