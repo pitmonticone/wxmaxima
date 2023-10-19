@@ -94,10 +94,10 @@ void AutocompletePopup::OnKeyDown(wxKeyEvent &event) {
         if (m_completions[0].Length() <= index)
           addChar = false;
         else {
-          ch = m_completions[0][index];
+          ch = m_completions[0].at(index);
           for (size_t i = 0; i < m_completions.GetCount(); i++)
             if ((m_completions[i].Length() < index + 1) ||
-                (m_completions[i][index] != ch))
+                (m_completions[i].at(index) != ch))
               addChar = false;
         }
 
