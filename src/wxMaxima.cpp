@@ -3032,7 +3032,7 @@ void wxMaxima::ReadManualTopicNames(wxString &data) {
 
   int end;
   if ((end = FindTagEnd(data, m_jumpManualSuffix)) != wxNOT_FOUND) {
-    wxArrayString topics;
+    std::vector<wxString> topics;
     wxXmlDocument xmldoc;
     wxString xml = data.Left(end + m_jumpManualSuffix.Length());
     wxStringInputStream xmlStream(xml);
@@ -3057,9 +3057,9 @@ void wxMaxima::ReadManualTopicNames(wxString &data) {
 		if (topic) {
 		  wxLogMessage(_("Received manual topic request: %s"),
 			       topic->GetContent().ToUTF8().data());
-		  topics.Add(topic->GetContent());
+		  topics.push_back(topic->GetContent());
 		}
-		if (topics.IsEmpty())
+		if (topics.size() == 0)
 		  wxLogMessage(_("No topics found in topic flag"));
 #ifdef USE_WEBVIEW
 		else
@@ -3729,17 +3729,17 @@ bool wxMaxima::QueryVariableValue() {
   if (m_worksheet->QuestionPending())
     return false;
 
-  if (m_varNamesToQuery.GetCount() > 0) {
+  if (m_varNamesToQuery.size() > 0) {
     SendMaxima(wxS(":lisp-quiet (wx-query-variable \"") +
-               m_varNamesToQuery.Last() + wxS("\")\n"));
-    m_varNamesToQuery.RemoveAt(m_varNamesToQuery.GetCount() - 1);
+               m_varNamesToQuery.back() + wxS("\")\n"));
+    m_varNamesToQuery.pop_back();
     return true;
   } else {
     if (m_readMaximaVariables) {
       SendMaxima(wxS(":lisp-quiet (wx-print-gui-variables)\n"));
       m_readMaximaVariables = false;
     }
-    if (!m_worksheet->m_variablesPane->GetEscapedVarnames().IsEmpty())
+    if (m_worksheet->m_variablesPane->GetEscapedVarnames().size() != 0)
       m_worksheet->m_variablesPane->UpdateSize();
 
     return false;
@@ -5054,9 +5054,9 @@ void wxMaxima::OnIdle(wxIdleEvent &event) {
     if (!m_initialWorkSheetContents.IsEmpty()) {
       //  Convert the comment block to an array of lines
       wxStringTokenizer tokenizer(m_initialWorkSheetContents, "\n");
-      wxArrayString lines;
+      std::vector<wxString> lines;
       while (tokenizer.HasMoreTokens())
-        lines.Add(tokenizer.GetNextToken());
+        lines.push_back(tokenizer.GetNextToken());
       m_worksheet->InsertGroupCells(
 				    Format::TreeFromWXM(lines, &m_configuration));
       m_worksheet->UpdateMLast();

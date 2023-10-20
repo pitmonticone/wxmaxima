@@ -55,10 +55,10 @@ void AutocompletePopup::UpdateResults() {
 
     if (m_type != AutoComplete::esccommand) {
       m_editor->ReplaceSelection(m_editor->GetSelectionString(),
-                                 m_completions[0]);
+                                 m_completions.at(0));
       m_editor->ClearSelection();
     } else
-      m_editor->InsertEscCommand(m_completions[0]);
+      m_editor->InsertEscCommand(m_completions.at(0));
 
     m_parent->GetParent()->Refresh();
     if (!m_editor->IsActive())
@@ -91,13 +91,13 @@ void AutocompletePopup::OnKeyDown(wxKeyEvent &event) {
       wxString word = m_editor->GetSelectionString();
       size_t index = word.Length();
       do {
-        if (m_completions[0].Length() <= index)
+        if (m_completions.at(0).Length() <= index)
           addChar = false;
         else {
-          ch = m_completions[0].at(index);
+          ch = m_completions.at(0).at(index);
           for (size_t i = 0; i < m_completions.size(); i++)
-            if ((m_completions[i].Length() < index + 1) ||
-                (m_completions[i].at(index) != ch))
+            if ((m_completions.at(i).Length() < index + 1) ||
+                (m_completions.at(i).at(index) != ch))
               addChar = false;
         }
 
@@ -122,9 +122,9 @@ void AutocompletePopup::OnKeyDown(wxKeyEvent &event) {
     if (m_completions.size() > 0) {
       if (m_type != AutoComplete::esccommand)
         m_editor->ReplaceSelection(m_editor->GetSelectionString(),
-                                   m_completions[selection]);
+                                   m_completions.at(selection));
       else
-        m_editor->InsertEscCommand(m_completions[selection]);
+        m_editor->InsertEscCommand(m_completions.at(selection));
     }
     m_parent->GetParent()->Refresh();
     if (!m_editor->IsActive())
@@ -137,7 +137,7 @@ void AutocompletePopup::OnKeyDown(wxKeyEvent &event) {
       int selection = GetNextItem(0, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
       if (selection < 0)
         selection = 0;
-      m_editor->InsertEscCommand(m_completions[selection]);
+      m_editor->InsertEscCommand(m_completions.at(selection));
     }
     m_parent->GetParent()->Refresh();
     if (!m_editor->IsActive())
@@ -260,7 +260,7 @@ void AutocompletePopup::OnClick(wxMouseEvent &WXUNUSED(event)) {
 
   if (m_value < 0)
     m_value = 0;
-  m_partial = m_completions[m_value];
+  m_partial = m_completions.at(m_value);
   if (m_type != AutoComplete::esccommand)
     m_editor->ReplaceSelection(m_editor->GetSelectionString(), m_partial);
   else
