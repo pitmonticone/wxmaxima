@@ -1786,8 +1786,9 @@ void Worksheet::OnMouseRightDown(wxMouseEvent &event) {
         if ((group->GetEditable() != NULL) &&
             (group->GetEditable()->ContainsPoint(wxPoint(downx, downy)))) {
           wxString wordUnderCursor = group->GetEditable()->GetWordUnderCaret();
-          wxArrayString dst[4];
-          wxArrayString sameBeginning;
+	  // TODO: This calls for a range check
+	  std::vector<wxString> dst[4];
+          std::vector<wxString> sameBeginning;
           wxString anchor =
 	    m_maximaManual.GetHelpfileAnchorName(wordUnderCursor);
           if (!anchor.IsEmpty())
@@ -1812,25 +1813,25 @@ void Worksheet::OnMouseRightDown(wxMouseEvent &event) {
               continue;
             if (cmdName.StartsWith(wordUnderCursor)) {
               if (wordUnderCursor != cmdName)
-                sameBeginning.Add(cmdName);
+                sameBeginning.push_back(cmdName);
             } else {
               int dstnce = LevenshteinDistance(wordUnderCursor, cmdName);
               if ((dstnce <= 4) && (dstnce > 0))
-                dst[dstnce - 1].Add(cmdName);
+                dst[dstnce - 1].push_back(cmdName);
             }
           }
-          m_replacementsForCurrentWord.Clear();
-          if (sameBeginning.GetCount() <= 10)
+          m_replacementsForCurrentWord.clear();
+          if (sameBeginning.size() <= 10)
             m_replacementsForCurrentWord = sameBeginning;
           for (int o = 0; o < 4; o++) {
-            if (m_replacementsForCurrentWord.GetCount() + dst[o].GetCount() <=
+            if (m_replacementsForCurrentWord.size() + dst[o].size() <=
                 10) {
-              for (unsigned int i = 0; i < dst[o].GetCount(); i++)
-                m_replacementsForCurrentWord.Add(dst[o][i]);
+              for (unsigned int i = 0; i < dst[o].size(); i++)
+                m_replacementsForCurrentWord.push_back(dst[o][i]);
             } else
               break;
           }
-          for (unsigned int i = 0; i < m_replacementsForCurrentWord.GetCount();
+          for (unsigned int i = 0; i < m_replacementsForCurrentWord.size();
                i++)
             popupMenu.Append(EventIDs::popid_suggestion1 + i,
                              m_replacementsForCurrentWord[i]);
@@ -7926,17 +7927,17 @@ bool Worksheet::Autocomplete(AutoComplete::autoCompletionType type) {
   }
 
   m_completions = m_autocomplete.CompleteSymbol(partial, type);
-  m_completions.Sort();
+  std::sort(m_completions.begin(), m_completions.end());
   m_autocompleteTemplates = (type == AutoComplete::tmplte);
 
   /// No completions - clear the selection and return false
-  if (m_completions.GetCount() == 0) {
+  if (m_completions.size() == 0) {
     editor->ClearSelection();
     return false;
   }
 
   /// If there is only one completion, use it
-  if ((m_completions.GetCount() == 1) && (type != AutoComplete::esccommand)) {
+  if ((m_completions.size() == 1) && (type != AutoComplete::esccommand)) {
     size_t start, end;
     editor->GetSelection(&start, &end);
 
