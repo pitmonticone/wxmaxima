@@ -1786,8 +1786,7 @@ void Worksheet::OnMouseRightDown(wxMouseEvent &event) {
         if ((group->GetEditable() != NULL) &&
             (group->GetEditable()->ContainsPoint(wxPoint(downx, downy)))) {
           wxString wordUnderCursor = group->GetEditable()->GetWordUnderCaret();
-	  // TODO: This calls for a range check
-	  std::vector<wxString> dst[4];
+	  std::array<std::vector<wxString>, 4> dst;
           std::vector<wxString> sameBeginning;
           wxString anchor =
 	    m_maximaManual.GetHelpfileAnchorName(wordUnderCursor);
@@ -1824,10 +1823,10 @@ void Worksheet::OnMouseRightDown(wxMouseEvent &event) {
           if (sameBeginning.size() <= 10)
             m_replacementsForCurrentWord = sameBeginning;
           for (int o = 0; o < 4; o++) {
-            if (m_replacementsForCurrentWord.size() + dst[o].size() <=
+            if (m_replacementsForCurrentWord.size() + dst.at(o).size() <=
                 10) {
-              for (unsigned int i = 0; i < dst[o].size(); i++)
-                m_replacementsForCurrentWord.push_back(dst[o][i]);
+              for (unsigned int i = 0; i < dst.at(o).size(); i++)
+                m_replacementsForCurrentWord.push_back(dst.at(o).at(i));
             } else
               break;
           }

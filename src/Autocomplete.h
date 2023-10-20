@@ -31,6 +31,7 @@
 #define AUTOCOMPLETE_H
 
 #include <thread>
+#include <algorithm>
 #include <memory>
 #include <wx/wx.h>
 #include <wx/dir.h>
@@ -145,15 +146,7 @@ private:
         wxFileName newItemName(filename);
         wxString newItem = "\"" + m_prefix + newItemName.GetFullName() + "\"";
         newItem.Replace(wxFileName::GetPathSeparator(), "/");
-        bool found = false;
-        for(auto &file:m_files) {
-          if(file == newItem)
-          {
-            found = true;
-            break;
-          }
-        }
-        if(!found)
+        if(std::find(m_files.begin(), m_files.end(), newItem) == m_files.end())
           m_files.push_back(newItem);
         return wxDIR_CONTINUE;
       }
@@ -162,15 +155,7 @@ private:
         wxFileName newItemName(dirname);
         wxString newItem = "\"" + m_prefix + newItemName.GetFullName() + "/\"";
         newItem.Replace(wxFileName::GetPathSeparator(), "/");
-        bool found = false;
-        for(auto &file:m_files) {
-          if(file == newItem)
-          {
-            found = true;
-            break;
-          }
-        }
-        if(!found)
+        if(std::find(m_files.begin(), m_files.end(), newItem) == m_files.end())
           m_files.push_back(newItem);
         return wxDIR_IGNORE;
       }
@@ -197,15 +182,7 @@ private:
           wxFileName newItemName(filename);
           wxString newItem = "\"" + m_prefix + newItemName.GetName() + "\"";
           newItem.Replace(wxFileName::GetPathSeparator(), "/");
-        bool found = false;
-        for(auto &file:m_files) {
-          if(file == newItem)
-          {
-            found = true;
-            break;
-          }
-        }
-        if(!found)
+          if(std::find(m_files.begin(), m_files.end(), newItem) == m_files.end())
           m_files.push_back(newItem);
         }
         return wxDIR_CONTINUE;
@@ -239,15 +216,7 @@ private:
         wxFileName newItemName(dirname);
         wxString newItem = "\"" + m_prefix + newItemName.GetFullName() + "/\"";
         newItem.Replace(wxFileName::GetPathSeparator(), "/");
-        bool found = false;
-        for(auto &file:m_files) {
-          if(file == newItem)
-          {
-            found = true;
-            break;
-          }
-        }
-        if(!found)
+        if(std::find(m_files.begin(), m_files.end(), newItem) == m_files.end())
           m_files.push_back(newItem);
         return wxDIR_IGNORE;
       }
@@ -266,15 +235,7 @@ private:
           wxFileName newItemName(filename);
           wxString newItem = "\"" + m_prefix + newItemName.GetName() + "\"";
           newItem.Replace(wxFileName::GetPathSeparator(), "/");
-          bool found = false;
-          for(auto &file:m_files) {
-            if(file == newItem)
-            {
-              found = true;
-              break;
-            }
-          }
-          if(!found)
+          if(std::find(m_files.begin(), m_files.end(), newItem) == m_files.end())
             m_files.push_back(newItem);
         }
         return wxDIR_CONTINUE;
@@ -308,15 +269,7 @@ private:
         wxFileName newItemName(dirname);
         wxString newItem = "\"" + m_prefix + newItemName.GetFullName() + "/\"";
         newItem.Replace(wxFileName::GetPathSeparator(), "/");
-        bool found = false;
-        for(auto &file:m_files) {
-          if(file == newItem)
-          {
-            found = true;
-            break;
-          }
-        }
-        if(!found)
+        if(std::find(m_files.begin(), m_files.end(), newItem) == m_files.end())
           m_files.push_back(newItem);
         return wxDIR_IGNORE;
       }
