@@ -2133,7 +2133,7 @@ void wxMaxima::SendMaxima(wxString s, bool addToHistory) {
             funName << wxS(",");
           wxString a = argTokens.GetNextToken().Trim().Trim(false);
           if (a != wxEmptyString) {
-            if (a[0] == '[')
+            if (a.at(0) == '[')
               funName << wxS("[<") << a.SubString(1, a.Length() - 2)
                       << wxS(">]");
             else
@@ -3652,7 +3652,7 @@ void wxMaxima::VariableActionOperators(const wxString &value) {
 	      if ((!content.IsEmpty()) &&
 		  (m_configuration.m_maximaOperators.find(content) ==
 		   m_configuration.m_maximaOperators.end())) {
-		if ((content[0] > '9') || (content[0] < '0')) {
+		if ((content.at(0) > '9') || (content.at(0) < '0')) {
 		  m_configuration.m_maximaOperators[content] = 1;
 		  if (!newOperators.IsEmpty())
 		    newOperators += wxS(", ");
@@ -4694,9 +4694,9 @@ void wxMaxima::ShowWxMaximaHelp() {
     // Cygwin uses /c/something instead of c:/something and passes this path to
     // the web browser - which doesn't support cygwin paths => convert the path
     // to a native windows pathname if needed.
-    if (helpfile.Length() > 1 && helpfile[0] == wxS('/')) {
-      helpfile[0] = helpfile[1];
-      helpfile[1] = wxS(':');
+    if (helpfile.Length() > 1 && helpfile.at(0) == wxS('/')) {
+      helpfile.at(0) = helpfile[1];
+      helpfile.at(1) = wxS(':');
     }
 #endif // __CYGWIN__
 
@@ -4738,9 +4738,9 @@ void wxMaxima::ShowMaximaHelpWithoutAnchor() {
     // Cygwin uses /c/something instead of c:/something and passes this path to
     // the web browser - which doesn't support cygwin paths => convert the path
     // to a native windows pathname if needed.
-    if (helpfile.Length() > 1 && helpfile[0] == wxS('/')) {
-      helpfile[0] = helpfile[1];
-      helpfile[1] = wxS(':');
+    if (helpfile.Length() > 1 && helpfile.at(0) == wxS('/')) {
+      helpfile.at(0) = helpfile.at(1);
+      helpfile.at(1) = wxS(':');
     }
 #endif // __CYGWIN__
 
@@ -10270,7 +10270,7 @@ wxString wxMaxima::GetUnmatchedParenthesisState(wxString text, size_t &index) {
       continue;
     }
 
-    wxChar firstC = itemText[0];
+    wxChar firstC = itemText.at(0);
     wxChar lastC = itemText.Last();
 
     // Remember the last non-whitespace character that isn't part
@@ -10511,7 +10511,7 @@ void wxMaxima::ReplaceSuggestion(wxCommandEvent &event) {
     return;
   editor->SelectWordUnderCaret(false);
   editor->ReplaceSelection(editor->GetWordUnderCaret(),
-                           m_worksheet->m_replacementsForCurrentWord[index]);
+                           m_worksheet->m_replacementsForCurrentWord.at(index));
 }
 
 void wxMaxima::InsertMenu(wxCommandEvent &event) {
