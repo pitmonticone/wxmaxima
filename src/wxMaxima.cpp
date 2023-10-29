@@ -1238,6 +1238,8 @@ wxMaxima::wxMaxima(wxWindow *parent, int id,
           wxCommandEventHandler(wxMaxima::EditMenu), NULL, this);
   Connect(EventIDs::internalRepresentation, wxEVT_MENU,
           wxCommandEventHandler(wxMaxima::EditMenu), NULL, this);
+  Connect(EventIDs::wxMathML, wxEVT_MENU,
+          wxCommandEventHandler(wxMaxima::EditMenu), NULL, this);
   Connect(EventIDs::menu_noAutosubscript, wxEVT_MENU,
           wxCommandEventHandler(wxMaxima::EditMenu), NULL, this);
   Connect(EventIDs::menu_defaultAutosubscript, wxEVT_MENU,
