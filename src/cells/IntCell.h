@@ -112,4 +112,5 @@ private:
 
     //! Is this integral definitive?
     IntegralType m_intStyle = INT_IDEF;
+};
 #endif  // INTCELL_H

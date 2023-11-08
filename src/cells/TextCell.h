@@ -150,7 +150,7 @@ protected:
   bool m_dontEscapeOpeningParenthesis CPP20BITFIELD(x) = false; 
   //! Default to a special tooltip for prompts?
   bool m_promptTooltip CPP20BITFIELD(x) = false;
-  bool m_keepPercent_last CPP20BITFIELD(x);
+  bool m_keepPercent_last CPP20BITFIELD(x) = false;
 };
 
 #endif // TEXTCELL_H

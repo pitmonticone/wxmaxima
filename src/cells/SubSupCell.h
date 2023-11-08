@@ -79,5 +79,6 @@ private:
     std::unique_ptr<Cell> m_preSubCell;
     std::unique_ptr<Cell> m_preSupCell;
     // The pointers above point to inner cells and must be kept contiguous.
+};
 
 #endif // SUBSUPCELL_H

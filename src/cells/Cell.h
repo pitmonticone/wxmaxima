@@ -36,7 +36,7 @@
   bit fields.
  */
 #if __cplusplus > 202001L
-#define CPP20BITFIELD(x) :(x)
+#define CPP20BITFIELD(x)  :x 
 #else
 #define CPP20BITFIELD(x)
 #endif
@@ -998,11 +998,6 @@ protected:
     TextStyle m_textStyle = TS_MATH;
 
 private:
-    // In the boolean bit fields below, InitBitFields is an indication that
-    // the InitBitFields() method initializes a given field. It should be
-    // only added once such initialization is in place. It makes it easier
-    // to verify that all bit fields are initialized.
-
     //! Whether the cell owns its m_tooltip - otherwise it points to a static string.
     bool m_ownsToolTip CPP20BITFIELD(1) = false;
     bool m_bigSkip CPP20BITFIELD(1) = false;
