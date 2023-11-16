@@ -2802,7 +2802,7 @@ void EditorCell::History::AddState(EditorCell::History::HistoryEntry entry)
 }
 void EditorCell::History::AddState(wxString text, long long selStart, long long selEnd)
 {
-  EditorCell::History::HistoryEntry(text, selStart, selEnd);
+  AddState(EditorCell::History::HistoryEntry(text, selStart, selEnd));
 }
 
 bool EditorCell::History::Undo()
@@ -2825,11 +2825,12 @@ bool EditorCell::History::Redo()
   return false;
 }
 bool EditorCell::History::CanUndo() const {return m_historyPosition > 0;}
-bool EditorCell::History::CanRedo() const {return m_historyPosition < m_history.size();}
+bool EditorCell::History::CanRedo() const {return m_historyPosition + 1 < m_history.size();}
 EditorCell::History::HistoryEntry EditorCell::History::GetState() const {
   return m_history.at(m_historyPosition);}
 void EditorCell::History::ClearUndoBuffer() {
-   m_history.at(m_historyPosition);}
+  m_history.clear();
+  m_historyPosition = 0;}
 
 void EditorCell::SetState(const EditorCell::History::HistoryEntry &state) {
   m_text = state.GetText();
