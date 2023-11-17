@@ -2791,8 +2791,12 @@ wxCoord EditorCell::GetLineWidth(size_t line, size_t pos) {
   return lineWidth;
 }
 
-bool EditorCell::History::AddState(EditorCell::History::HistoryEntry entry)
+bool EditorCell::History::AddState(EditorCell::History::HistoryEntry entry, Action action)
 {
+  if(m_lastAction == action)
+    return false;
+  m_lastAction = action;
+  
   if(!m_history.empty())
     {
       if(m_history.back().GetText() == entry.GetText())
@@ -2804,7 +2808,7 @@ bool EditorCell::History::AddState(EditorCell::History::HistoryEntry entry)
       // If we add a history item and not are at the end of history then we want to
       // erase the "now future" history first. Or find out where in the history we are.
 
-      for(auto i = m_history.size() - 1; i >= 0; --i)
+      for(auto i = m_history.size() - 1; i >= m_historyPosition; --i)
         {
           if(m_history.at(i).GetText() == entry.GetText())
             {
@@ -2821,9 +2825,10 @@ bool EditorCell::History::AddState(EditorCell::History::HistoryEntry entry)
 
   return true;
 }
-bool EditorCell::History::AddState(wxString text, long long selStart, long long selEnd)
+bool EditorCell::History::AddState(wxString text, long long selStart, long long selEnd,
+                                   Action action)
 {
-  return AddState(EditorCell::History::HistoryEntry(text, selStart, selEnd));
+  return AddState(EditorCell::History::HistoryEntry(text, selStart, selEnd), action);
 }
 
 bool EditorCell::History::Undo()

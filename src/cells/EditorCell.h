@@ -595,6 +595,12 @@ private:
   class History
   {
   public:
+    enum Action : uintptr_t {
+      any = 0,
+      removeChar  = 1,
+      addChar = 2
+    };
+
     //! How an entry to the undo history looks like
     class HistoryEntry // 64 bytes
     {
@@ -610,8 +616,8 @@ private:
       long long m_selStart = -1;
       long long m_selEnd = -1;
     };
-    bool AddState(HistoryEntry entry);
-    bool AddState(wxString text, long long selStart, long long selEnd);
+    bool AddState(HistoryEntry entry, Action action = any);
+    bool AddState(wxString text, long long selStart, long long selEnd, Action action = any);
     bool Undo();
     bool Redo();
     bool CanUndo() const;
@@ -622,6 +628,7 @@ private:
     std::vector<HistoryEntry> m_history;
     //! Where in the undo history are we?
     size_t m_historyPosition = 0;
+    Action m_lastAction;
   };
 
   //! The memory for the undo history
