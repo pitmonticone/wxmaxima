@@ -2791,7 +2791,7 @@ wxCoord EditorCell::GetLineWidth(size_t line, size_t pos) {
 
 bool EditorCell::History::AddState(EditorCell::History::HistoryEntry entry, Action action)
 {
-  if(m_lastAction == action)
+  if((m_lastAction == action) && (action != any))
     return false;
   m_lastAction = action;
   
