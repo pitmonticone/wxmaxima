@@ -1905,7 +1905,7 @@ bool EditorCell::HandleOrdinaryKey(wxKeyEvent &event) {
   bool insertLetter = true;
 
   if (SelectionActive()) {
-    if(SelectionActive)
+    if(SelectionActive())
       SaveValue();
     else
       SaveValue(History::Action::addChar);
@@ -2891,7 +2891,7 @@ void EditorCell::Redo() {
   SetState(m_history.GetState());
 }
 
-void EditorCell::SaveValue(Action action = any) {
+void EditorCell::SaveValue(History::Action action) {
   m_history.AddState(GetValue(), SelectionStart(), SelectionEnd(), action);
 }
 
